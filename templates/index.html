@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Posts Dashboard</title>
+    <!-- Using Bootstrap for a clean UI -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">Posts Dashboard</h1>
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Content</th>
+                <th>AI Response</th>
+                <th>Sentiment</th>
+                <th>Approved</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>{{ post['id'] }}</td>
+                <td>{{ post['post_title'] }}</td>
+                <td>{{ post['post_content'] }}</td>
+                <td>{{ post['ai_response'] }}</td>
+                <td>{{ "%.2f"|format(post['sentiment']) }}</td>
+                <td>{{ 'Yes' if post['approved'] == 1 else 'No' }}</td>
+                <td>
+                    {% if post['approved'] == 0 %}
+                    <form action="{{ url_for('approve', post_id=post['id']) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('edit', post_id=post['id']) }}" class="btn btn-primary btn-sm">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Engagement Metrics Section -->
+    <h3>Engagement Metrics</h3>
+    {% set total_posts = posts|length %}
+    {% set approved_posts = posts|selectattr('approved', 'equalto', 1)|list|length %}
+    <p>Total Posts: {{ total_posts }}</p>
+    <p>Approved Posts: {{ approved_posts }}</p>
+</div>
+</body>
+</html>
