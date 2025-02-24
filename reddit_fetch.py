@@ -13,13 +13,15 @@ reddit = praw.Reddit(
 conn = sqlite3.connect('data.db')
 cur = conn.cursor()
 
+# Create a table for posts with an additional 'topic' column for future use.
 cur.execute('''
     CREATE TABLE IF NOT EXISTS posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         post_title TEXT,
         post_content TEXT,
         ai_response TEXT,
-        approved INTEGER DEFAULT 0
+        approved INTEGER DEFAULT 0,
+        topic TEXT
     )
 ''')
 conn.commit()
@@ -29,11 +31,16 @@ generator = pipeline('text-generation', model='gpt2')
 
 def generate_ai_response(post_text):
     """
-    Generate an AI response for the given post text using GPT-2.
-    If the post text is empty, use the post title instead.
+    Generate an AI response using advanced prompt engineering.
+    The prompt now includes industry-specific instructions to reflect a professional tone.
     """
-    prompt = f"Write a thoughtful response for: {post_text}"
-    # Use max_new_tokens to specify the number of tokens to generate.
+    prompt = (
+        "Act as a marketing expert for a tech startup/SaaS company. "
+        "Your response should be authoritative, data-driven, and customer-centric. "
+        "Respond thoughtfully to the following discussion:\n\n"
+        f"{post_text}\n\n"
+        "Response:"
+    )
     response = generator(prompt, max_new_tokens=50)
     return response[0]['generated_text'].strip()
 
@@ -45,11 +52,14 @@ for post in subreddit.hot(limit=5):
 
     # Generate an AI response; use title as fallback if content is empty
     ai_response = generate_ai_response(content if content else title)
-
+    
+    # Set a placeholder topic (to be updated later via topic modeling)
+    topic_placeholder = "Uncategorized"
+    
     cur.execute('''
-        INSERT INTO posts (post_title, post_content, ai_response, approved)
-        VALUES (?, ?, ?, ?)
-    ''', (title, content, ai_response, 0))
+        INSERT INTO posts (post_title, post_content, ai_response, approved, topic)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (title, content, ai_response, 0, topic_placeholder))
     
     print(f"Inserted post: {title}")
     print("AI Response:", ai_response)

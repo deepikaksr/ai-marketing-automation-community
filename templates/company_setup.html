@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Setup</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-info text-white">
+        <h3 class="mb-0">{{ company and "Edit" or "Set Up" }} Company Details</h3>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('company_setup') }}" method="post">
+          <div class="form-group">
+            <label for="company_name">Company Name</label>
+            <input type="text" class="form-control" id="company_name" name="company_name" required
+                   value="{{ company['company_name'] if company else '' }}">
+          </div>
+          <div class="form-group">
+            <label for="company_profile">Company Profile</label>
+            <textarea class="form-control" id="company_profile" name="company_profile" rows="4" required>{{ company['company_profile'] if company else '' }}</textarea>
+          </div>
+          <div class="form-group">
+            <label for="blogs">Blogs (enter 20–25 blog links, comma-separated)</label>
+            <textarea class="form-control" id="blogs" name="blogs" rows="10">{{ company['blogs'] if company else '' }}</textarea>
+          </div>
+          <div class="form-group">
+            <label for="keywords">Keywords (comma-separated)</label>
+            <input type="text" class="form-control" id="keywords" name="keywords"
+                   value="{{ company['keywords'] if company else '' }}">
+          </div>
+          <div class="form-group">
+            <label for="communities">Communities</label>
+            <input type="text" class="form-control" id="communities" name="communities"
+                   value="{{ company['communities'] if company else '' }}">
+          </div>
+          <button type="submit" class="btn btn-primary">{{ company and "Update Details" or "Submit" }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

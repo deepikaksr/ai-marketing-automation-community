@@ -1,54 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Posts Dashboard</title>
-    <!-- Using Bootstrap for a clean UI -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <title>Dashboard - AI Marketing</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    
+    /* Make the title larger and more visually appealing */
+    .navbar-brand {
+      font-size: 2rem;      /* Increase text size */
+      font-weight: 700;     /* Make text bolder */
+      letter-spacing: 1px;  /* Add a bit of spacing between letters */
+    }
+
+    /* Increase container width so the table can grow wider */
+    .container {
+      max-width: 1400px; /* Adjust as needed */
+    }
+    /* Make the table take full width inside the container */
+    .table-responsive {
+      width: 100%;
+    }
+    /* Increase row height by adding more padding */
+    .table td, .table th {
+      padding: 1.5rem;
+      vertical-align: middle;
+    }
+    /* Scrollable box for long text */
+    .scrollable-box {
+      max-height: 300px;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      padding: 15px;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h1 class="mt-5">Posts Dashboard</h1>
-    <table class="table mt-3">
-        <thead>
-            <tr>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <a class="navbar-brand" href="{{ url_for('index') }}">AI Marketing Dashboard</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" 
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="btn btn-outline-light" href="{{ url_for('company_setup') }}">Company Setup</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <!-- Posts Card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <h3 class="mb-0">Posts</h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+              <tr>
                 <th>ID</th>
                 <th>Title</th>
                 <th>Content</th>
                 <th>AI Response</th>
                 <th>Sentiment</th>
+                <th>Topic</th>
                 <th>Approved</th>
                 <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for post in posts %}
-            <tr>
+              </tr>
+            </thead>
+            <tbody>
+              {% for post in posts %}
+              <tr>
                 <td>{{ post['id'] }}</td>
                 <td>{{ post['post_title'] }}</td>
-                <td>{{ post['post_content'] }}</td>
-                <td>{{ post['ai_response'] }}</td>
-                <td>{{ "%.2f"|format(post['sentiment']) }}</td>
+                <td>
+                  <div class="scrollable-box">
+                    {{ post['post_content'] }}
+                  </div>
+                </td>
+                <td>
+                  <div class="scrollable-box">
+                    {{ post['ai_response'] }}
+                  </div>
+                </td>
+                <td>{{ "%.2f"|format(post['sentiment']) if post['sentiment'] is not none else 'N/A' }}</td>
+                <td>{{ post['topic'] if post['topic'] else 'N/A' }}</td>
                 <td>{{ 'Yes' if post['approved'] == 1 else 'No' }}</td>
                 <td>
-                    {% if post['approved'] == 0 %}
-                    <form action="{{ url_for('approve', post_id=post['id']) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                    </form>
-                    {% endif %}
-                    <a href="{{ url_for('edit', post_id=post['id']) }}" class="btn btn-primary btn-sm">Edit</a>
+                  {% if post['approved'] == 0 %}
+                  <form action="{{ url_for('approve', post_id=post['id']) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-success mr-4">Approve</button>
+                  </form>
+                  {% endif %}
+                  <a href="{{ url_for('edit', post_id=post['id']) }}" class="btn btn-sm btn-primary">Edit</a>
                 </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-    <!-- Engagement Metrics Section -->
-    <h3>Engagement Metrics</h3>
-    {% set total_posts = posts|length %}
-    {% set approved_posts = posts|selectattr('approved', 'equalto', 1)|list|length %}
-    <p>Total Posts: {{ total_posts }}</p>
-    <p>Approved Posts: {{ approved_posts }}</p>
-</div>
+    <!-- Engagement Metrics Card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <h4 class="mb-0">Engagement Metrics</h4>
+      </div>
+      <div class="card-body">
+        {% set total_posts = posts|length %}
+        {% set approved_posts = posts|selectattr('approved', 'equalto', 1)|list|length %}
+        <p>Total Posts: {{ total_posts }}</p>
+        <p>Approved Posts: {{ approved_posts }}</p>
+      </div>
+    </div>
+
+    <!-- Charts Card -->
+    <div class="card shadow-sm">
+      <div class="card-header">
+        <h4 class="mb-0">Analytics</h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Sentiment Distribution</h5>
+            <div id="sentiment-chart" style="height: 300px;"></div>
+          </div>
+          <div class="col-md-6">
+            <h5>Topic Distribution</h5>
+            <div id="topic-chart" style="height: 300px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plotly and Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+  <script>
+    var sentiment_chart = JSON.parse('{{ sentiment_chart|tojson|safe }}');
+    var topic_chart = JSON.parse('{{ topic_chart|tojson|safe }}');
+    Plotly.newPlot('sentiment-chart', sentiment_chart.data, sentiment_chart.layout);
+    Plotly.newPlot('topic-chart', topic_chart.data, topic_chart.layout);
+  </script>
 </body>
 </html>
