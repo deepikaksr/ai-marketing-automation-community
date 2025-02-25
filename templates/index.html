@@ -10,40 +10,85 @@
     .navbar-brand { font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; }
     .container { max-width: 1400px; }
     .table-container {
-      max-height: 600px; 
+      max-height: 600px;
       overflow-y: auto;
       border: 1px solid #dee2e6;
       border-radius: 4px;
     }
     .table td, .table th { padding: 1rem; vertical-align: middle; }
-    .scrollable-box { 
-      max-height: 80px; 
-      overflow-y: auto; 
-      background-color: #fff; 
-      border: 1px solid #dee2e6; 
-      padding: 5px; 
-      border-radius: 4px; 
-      width: 200px; 
+    .scrollable-box {
+      max-height: 80px;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #dee2e6;
+      padding: 5px;
+      border-radius: 4px;
+      width: 200px;
     }
     .chart-container { margin-bottom: 2rem; }
-    .topics-list { 
-      background-color: #fff; 
-      padding: 15px; 
-      border: 1px solid #dee2e6; 
-      border-radius: 4px; 
+    .topics-list {
+      background-color: #fff;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
       font-size: 1.1rem;
     }
     .topics-list li { margin-bottom: 10px; }
-    .generated-post-container {
-      border: 1px solid #ccc;
-      border-radius: 8px;
+
+    /* Increased size of the box where the post is displayed */
+    .generated-post-box {
+      max-height: 400px;
+      min-height: 300px;
+      width: 100%;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #dee2e6;
       padding: 15px;
-      background-color: #f1f1f1;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+
+    /* Textarea for editing */
+    #post-edit-textarea {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 1.2rem;
+      display: none;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
       margin-top: 20px;
     }
-    .button-group {
-      margin-top: 15px;
+    .spinner-border {
+      width: 4rem;
+      height: 4rem;
+      color: #007bff;
     }
+
+    /* Centered large buttons */
+    .centered-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .centered-buttons button {
+      width: 200px;
+      height: 70px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 
@@ -71,8 +116,8 @@
           <tr>
             <th>ID</th>
             <th>Title</th>
-            <th style="width: 220px;">Content</th>  
-            <th style="width: 220px;">Comments</th> 
+            <th style="width: 220px;">Content</th>
+            <th style="width: 220px;">Comments</th>
             <th>Topic</th>
           </tr>
         </thead>
@@ -81,8 +126,12 @@
           <tr>
             <td>{{ post['id'] }}</td>
             <td>{{ post['post_title'] }}</td>
-            <td><div class="scrollable-box">{{ post['post_content'] }}</div></td>
-            <td><div class="scrollable-box">{{ post['comments'] }}</div></td>
+            <td>
+              <div class="scrollable-box">{{ post['post_content'] }}</div>
+            </td>
+            <td>
+              <div class="scrollable-box">{{ post['comments'] }}</div>
+            </td>
             <td>{{ post['topic'] if post['topic'] else 'miscellaneous' }}</td>
           </tr>
           {% endfor %}
@@ -93,37 +142,54 @@
     <div class="row">
       <!-- Left Column: Bar Chart (Increased Size) -->
       <div class="col-md-9">
+        <br></br>
         <h2>Top 15 Topics Distribution</h2>
         <div id="topic-bar-chart" style="height: 600px; width: 100%;"></div>
+        <br></br>
+        <!-- Centered Large Buttons to generate posts for platforms -->
+        <div class="centered-buttons">
+          <br></br>
+          <b style="font-size: larger;">Generate Post for:</b>
+          <button id="generateBlogButton" class="btn btn-primary">Blogs</button>
+          <button id="generateLinkedInButton" class="btn btn-info">LinkedIn</button>
+          <button id="generateTwitterButton" class="btn btn-warning">Twitter</button>
+          <br></br><br></br><br></br>
+        </div>
 
-        <!-- Buttons below the Bar Chart -->
-        <div class="button-group text-center">
-          <button class="btn btn-primary" onclick="generatePost('blog')">Generate Blog Post</button>
-          <button class="btn btn-info" onclick="generatePost('linkedin')">Generate LinkedIn Post</button>
-          <button class="btn btn-warning" onclick="generatePost('twitter')">Generate Twitter Post</button>
+        <!-- Loading spinner -->
+        <div id="loadingSpinner" class="loading-spinner">
+          <div class="spinner-border" role="status"></div>
         </div>
 
         <!-- Display Generated Post -->
-        <div id="generated-post" class="generated-post-container" style="display: none;">
-          <h4>Topic: <span id="generated-topic"></span></h4>
-          <p id="generated-response"></p>
-          <div class="button-group">
-            <button class="btn btn-success" onclick="copyToClipboard()">Copy to Clipboard</button>
-            <button class="btn btn-secondary" onclick="regeneratePost()">Regenerate</button>
-            <button class="btn btn-dark" onclick="makeCorrections()">Make Corrections</button>
+        <div id="generated-post" class="generated-post-box mt-4" style="display: none;">
+          <h4><strong>Generated Post</strong></h4>
+          <p id="post-topic" style="font-weight: bold; color: #007bff;"></p>
+          <p id="post-content"></p>
+
+          <!-- Textarea for editing -->
+          <textarea id="post-edit-textarea"></textarea>
+
+          <div class="mt-3">
+            <button id="copyButton" class="btn btn-secondary btn-sm">Copy</button>
+            <button id="editButton" class="btn btn-info btn-sm">Edit</button>
+            <button id="saveButton" class="btn btn-success btn-sm" style="display: none;">Save</button>
+            <button id="regenerateButton" class="btn btn-warning btn-sm">Regenerate</button>
           </div>
-          <textarea id="edit-area" class="form-control mt-3" style="display: none;"></textarea>
-          <button class="btn btn-primary mt-2" id="save-button" onclick="saveCorrections()" style="display: none;">Save</button>
         </div>
+        <br></br><br></br><br></br>
       </div>
 
       <!-- Right Column: Topics List -->
       <div class="col-md-3">
+        <br></br>
         <h3>Top Topics</h3>
         <div class="topics-list">
           <ul class="list-unstyled">
             {% for t, count in sorted_topics %}
-              <li><a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)</li>
+              <li>
+                <a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)
+              </li>
             {% endfor %}
           </ul>
         </div>
@@ -132,7 +198,7 @@
 
   </div>
 
-  <!-- JS Scripts -->
+  <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
@@ -143,85 +209,87 @@
     topic_chart.layout.transition = transitionConfig;
     Plotly.newPlot('topic-bar-chart', topic_chart.data, topic_chart.layout, {responsive: true});
 
-    // Generate Post
+    // Loading spinner
+    function showLoading() {
+      document.getElementById('loadingSpinner').style.display = 'flex';
+      document.getElementById('generated-post').style.display = 'none';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingSpinner').style.display = 'none';
+      document.getElementById('generated-post').style.display = 'block';
+    }
+
+    // Copy to clipboard
+    document.getElementById('copyButton').addEventListener('click', function() {
+      var content = document.getElementById('post-content').textContent;
+      navigator.clipboard.writeText(content).then(function() {
+        alert('Content copied to clipboard!');
+      });
+    });
+
+    // Edit post directly below
+    document.getElementById('editButton').addEventListener('click', function() {
+      var content = document.getElementById('post-content').textContent;
+      document.getElementById('post-edit-textarea').value = content;
+      document.getElementById('post-content').style.display = 'none';
+      document.getElementById('post-edit-textarea').style.display = 'block';
+      document.getElementById('saveButton').style.display = 'inline-block';
+      document.getElementById('editButton').style.display = 'none';
+    });
+
+    // Save edited post
+    document.getElementById('saveButton').addEventListener('click', function() {
+      var editedContent = document.getElementById('post-edit-textarea').value;
+      document.getElementById('post-content').textContent = editedContent;
+      document.getElementById('post-content').style.display = 'block';
+      document.getElementById('post-edit-textarea').style.display = 'none';
+      document.getElementById('saveButton').style.display = 'none';
+      document.getElementById('editButton').style.display = 'inline-block';
+      alert('Post saved successfully!');
+    });
+
+    // Regenerate post
+    document.getElementById('regenerateButton').addEventListener('click', function() {
+      generatePost(currentPlatform);
+    });
+
+    // Generate post for different platforms
+    var currentPlatform = 'blog';
+
     function generatePost(platform) {
-      fetch(`/generate_post/${platform}`)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById("generated-post").style.display = "block";
-          document.getElementById("generated-topic").innerText = data.topic;
-          document.getElementById("generated-response").innerText = data.response;
-        });
-    }
+      currentPlatform = platform;
+      showLoading();
 
-    // Copy to Clipboard
-    function copyToClipboard() {
-      var text = document.getElementById("generated-response").innerText;
-      if (text) {
-        navigator.clipboard.writeText(text);
-        alert("Content copied to clipboard!");
-      }
-    }
-
-    // Regenerate Post
-    function regeneratePost() {
-      var topic = document.getElementById("generated-topic").innerText;
-      var platform = document.querySelector(".button-group .btn-primary").innerText.toLowerCase().includes("blog") ? "blog"
-                   : document.querySelector(".button-group .btn-info").innerText.toLowerCase().includes("linkedin") ? "linkedin"
-                   : "twitter";
-
-      fetch(`/regenerate_post/${platform}`, {method: "POST"})
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById("generated-response").innerText = data.response;
-        });
-    }
-
-    // Make Corrections
-    function makeCorrections() {
-      var response = document.getElementById("generated-response").innerText;
-      document.getElementById("edit-area").style.display = "block";
-      document.getElementById("save-button").style.display = "block";
-      document.getElementById("edit-area").value = response;
-    }
-
-    // Save Corrections without page reload
-    function saveCorrections() {
-      var content = document.getElementById("edit-area").value;
-      fetch("/edit_post", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({content: content})
+      fetch('/generate_post', {
+        method: 'POST',
+        body: JSON.stringify({ platform: platform }),
+        headers: { 'Content-Type': 'application/json' }
       })
       .then(response => response.json())
       .then(data => {
-        if (data.status === "success") {
-          // ✅ Update the generated post with the edited text
-          document.getElementById("generated-response").innerText = data.response;
-          
-          // ✅ Keep the generated post visible
-          document.getElementById("generated-post").style.display = "block";
-          
-          // ✅ Hide the textarea and Save button
-          document.getElementById("edit-area").style.display = "none";
-          document.getElementById("save-button").style.display = "none";
-          
-          // ✅ Show the Edit and Copy buttons again
-          document.getElementById("edit-button").style.display = "inline-block";
-          document.getElementById("copy-button").style.display = "inline-block";
-
-          // ✅ Show a success message without popup
-          showToast("Corrections saved successfully!");
-        } else {
-          showToast("Error: " + data.error);
-        }
+        document.getElementById('post-topic').textContent = 'Topic: ' + data.topic;
+        document.getElementById('post-content').textContent = data.response;
+        hideLoading();
       })
       .catch(error => {
-        showToast("An error occurred: " + error);
+        console.error('Error:', error);
+        hideLoading();
+        alert('An error occurred. Please try again.');
       });
     }
 
+    document.getElementById('generateBlogButton').addEventListener('click', function() {
+      generatePost('blog');
+    });
 
+    document.getElementById('generateLinkedInButton').addEventListener('click', function() {
+      generatePost('linkedin');
+    });
+
+    document.getElementById('generateTwitterButton').addEventListener('click', function() {
+      generatePost('twitter');
+    });
   </script>
 
 </body>
