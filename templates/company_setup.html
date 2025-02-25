@@ -8,43 +8,100 @@
     body {
       background-color: #f8f9fa;
     }
+    .container {
+      max-width: 800px;
+      margin-top: 50px;
+    }
+    .card {
+      border-radius: 8px;
+    }
+    .card-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    .loading-spinner {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      height: 80px;
+      margin-top: 20px;
+    }
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: #007bff;
+    }
   </style>
 </head>
+
 <body>
-  <div class="container mt-5">
+  <div class="container">
     <div class="card shadow-sm">
-      <div class="card-header bg-info text-white">
+      <div class="card-header bg-info text-white text-center">
         <h3 class="mb-0">{{ company and "Edit" or "Set Up" }} Company Details</h3>
       </div>
       <div class="card-body">
-        <form action="{{ url_for('company_setup') }}" method="post">
+        <form id="companyForm" action="{{ url_for('company_setup') }}" method="post">
           <div class="form-group">
             <label for="company_name">Company Name</label>
             <input type="text" class="form-control" id="company_name" name="company_name" required
                    value="{{ company['company_name'] if company else '' }}">
           </div>
+
           <div class="form-group">
             <label for="company_profile">Company Profile</label>
             <textarea class="form-control" id="company_profile" name="company_profile" rows="4" required>{{ company['company_profile'] if company else '' }}</textarea>
           </div>
+
           <div class="form-group">
             <label for="blogs">Blogs (enter 20–25 blog links, comma-separated)</label>
-            <textarea class="form-control" id="blogs" name="blogs" rows="10">{{ company['blogs'] if company else '' }}</textarea>
+            <textarea class="form-control" id="blogs" name="blogs" rows="6" required>{{ company['blogs'] if company else '' }}</textarea>
           </div>
+
           <div class="form-group">
             <label for="keywords">Keywords (comma-separated)</label>
-            <input type="text" class="form-control" id="keywords" name="keywords"
+            <input type="text" class="form-control" id="keywords" name="keywords" required
                    value="{{ company['keywords'] if company else '' }}">
           </div>
+
           <div class="form-group">
             <label for="communities">Communities</label>
             <input type="text" class="form-control" id="communities" name="communities"
                    value="{{ company['communities'] if company else '' }}">
           </div>
-          <button type="submit" class="btn btn-primary">{{ company and "Update Details" or "Submit" }}</button>
+
+          <!-- Submit Button with Loading Spinner -->
+          <div class="text-center">
+            <button type="submit" id="submitButton" class="btn btn-primary btn-lg">
+              {{ company and "Update Details" or "Submit" }}
+            </button>
+          </div>
+
+          <!-- Loading Spinner -->
+          <div id="loadingSpinner" class="loading-spinner">
+            <div class="spinner-border" role="status">
+              <span class="sr-only">Processing...</span>
+            </div>
+          </div>
         </form>
       </div>
     </div>
   </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Show Loading Spinner When Form Is Submitted
+    document.getElementById('companyForm').addEventListener('submit', function() {
+      document.getElementById('submitButton').disabled = true;
+      document.getElementById('loadingSpinner').style.display = 'flex';
+    });
+  </script>
+
 </body>
 </html>

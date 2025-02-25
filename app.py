@@ -1,13 +1,15 @@
 from flask import Flask, render_template, redirect, url_for, request, session, jsonify
 import sqlite3
 import json
+import random
 import plotly.graph_objs as go
 from textblob import TextBlob
 import requests
 import pyperclip
+from sentence_transformers import SentenceTransformer, util
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key"  # Replace with a secure key in production
+app.secret_key = "your-secret-key"
 
 #############################################
 # Database & Helper Functions
@@ -15,7 +17,7 @@ app.secret_key = "your-secret-key"  # Replace with a secure key in production
 
 def get_db_connection():
     conn = sqlite3.connect('data.db')
-    conn.row_factory = sqlite3.Row  # Access columns by name.
+    conn.row_factory = sqlite3.Row
     return conn
 
 def ensure_company_details_table():
@@ -32,7 +34,6 @@ def ensure_company_details_table():
             style_guide TEXT
         )
     ''')
-    conn.commit()
     conn.close()
 
 #############################################
@@ -41,6 +42,7 @@ def ensure_company_details_table():
 
 def get_sentiment(text):
     return TextBlob(text).sentiment.polarity
+
 
 def generate_topic_chart(posts):
     topic_counts = {}
@@ -51,12 +53,38 @@ def generate_topic_chart(posts):
             topics_list = ["miscellaneous"]
         for t in topics_list:
             topic_counts[t] = topic_counts.get(t, 0) + 1
-    topics = list(topic_counts.keys())
-    counts = list(topic_counts.values())
-    data = [go.Bar(x=topics, y=counts, marker=dict(color='rgb(26, 118, 255)'))]
-    layout = go.Layout(title='Topic Distribution', xaxis=dict(title='Topic'), yaxis=dict(title='Count'))
+
+    # Sort by count and get top 15 topics
+    sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
+
+    # Extract topics and counts
+    topics = [item[0] for item in sorted_topics]
+    counts = [item[1] for item in sorted_topics]
+
+    # Assign colors based on count (same count = same color)
+    unique_counts = sorted(set(counts), reverse=True)
+
+    # Predefined colors + random fallback if needed
+    predefined_colors = ['rgb(26, 118, 255)', 'rgb(255, 153, 51)', 'rgb(0, 204, 102)', 
+                         'rgb(204, 51, 255)', 'rgb(255, 102, 102)', 'rgb(102, 204, 255)', 
+                         'rgb(255, 204, 102)', 'rgb(102, 255, 178)', 'rgb(178, 102, 255)', 
+                         'rgb(255, 178, 102)']
+
+    # Dynamically generate additional colors if needed
+    while len(predefined_colors) < len(unique_counts):
+        predefined_colors.append(f'rgb({random.randint(0,255)}, {random.randint(0,255)}, {random.randint(0,255)})')
+
+    color_dict = dict(zip(unique_counts, predefined_colors))
+    bar_colors = [color_dict[count] for count in counts]
+
+    # Plotly Bar Chart
+    data = [go.Bar(x=topics, y=counts, marker=dict(color=bar_colors))]
+    layout = go.Layout(title='Top 15 Topics Distribution', 
+                       xaxis=dict(title='Topic'), 
+                       yaxis=dict(title='Count'))
     fig = go.Figure(data=data, layout=layout)
-    return json.loads(fig.to_json()), topic_counts
+    return json.loads(fig.to_json())
+
 
 #############################################
 # AI Response Generation using Gemini Flash
@@ -71,12 +99,10 @@ def get_confirmed_style_guide():
     return None
 
 def generate_ai_response_with_style(prompt_text):
-    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"  
+    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
-    data = {
-        "contents": [{"parts": [{"text": prompt_text}]}]
-    }
+    data = {"contents": [{"parts": [{"text": prompt_text}]}]}
     try:
         response = requests.post(endpoint, headers=headers, json=data, timeout=60)
         response.raise_for_status()
@@ -91,6 +117,24 @@ def generate_ai_response_with_style(prompt_text):
         return f"Error: {e}"
 
 #############################################
+# Similarity Score Calculations
+#############################################
+
+def calculate_response_alignment_score(generated_post, style_guide):
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    gen_embedding = model.encode(generated_post, convert_to_tensor=True)
+    style_embedding = model.encode(style_guide, convert_to_tensor=True)
+    similarity_score = util.pytorch_cos_sim(gen_embedding, style_embedding).item()
+    return round(similarity_score * 100, 2)
+
+def calculate_discussion_alignment_score(generated_post, related_texts):
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    gen_embedding = model.encode(generated_post, convert_to_tensor=True)
+    discussion_embedding = model.encode(related_texts, convert_to_tensor=True)
+    similarity_score = util.pytorch_cos_sim(gen_embedding, discussion_embedding).item()
+    return round(similarity_score * 100, 2)
+
+#############################################
 # Routes
 #############################################
 
@@ -103,60 +147,91 @@ def index():
     posts_with_sentiment = []
     for post in posts:
         post_dict = dict(post)
-        post_dict["sentiment"] = get_sentiment(post_dict["ai_response"]) if post_dict.get("ai_response") else None
+        if post_dict.get("ai_response"):
+            post_dict["sentiment"] = get_sentiment(post_dict["ai_response"])
+        else:
+            post_dict["sentiment"] = None
         posts_with_sentiment.append(post_dict)
-
-    topic_chart, topic_counts = generate_topic_chart(posts_with_sentiment)
+    
+    topic_chart = generate_topic_chart(posts_with_sentiment)
+    
+    topic_counts = {}
+    for post in posts_with_sentiment:
+        topic_field = post.get("topic") or "miscellaneous"
+        topics_list = [t.strip() for t in topic_field.split(",") if t.strip()]
+        if not topics_list:
+            topics_list = ["miscellaneous"]
+        for t in topics_list:
+            topic_counts[t] = topic_counts.get(t, 0) + 1
+    
     sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
-
-    return render_template("index.html", posts=posts_with_sentiment, topic_chart=topic_chart, sorted_topics=sorted_topics)
-
+    
+    return render_template("index.html", posts=posts_with_sentiment,
+                           topic_chart=topic_chart, sorted_topics=sorted_topics)
 
 @app.route("/generate_post", methods=["POST"])
 def generate_post():
-    try:
-        data = request.get_json()
-        platform = data.get("platform", "blog")
+    style_guide = get_confirmed_style_guide()
+    if not style_guide:
+        return jsonify({"error": "No style guide found. Please set up your company profile."}), 400
 
-        style_guide = get_confirmed_style_guide()
-        if not style_guide:
-            return jsonify({"response": "No style guide found. Please set up your company profile."}), 400
+    platform = request.json.get("platform", "blog")
+    platform_instructions = {
+        "blog": "Generate a detailed blog post with a clear structure, engaging introduction, and call-to-action.",
+        "linkedin": "Generate a professional LinkedIn post that is concise, value-driven, and engaging for professionals.",
+        "twitter": "Generate a short and engaging tweet within 280 characters that captures attention quickly."
+    }
 
-        # Use the most popular topic
-        conn = get_db_connection()
-        posts = conn.execute("SELECT topic FROM posts WHERE topic IS NOT NULL").fetchall()
-        conn.close()
+    # Select the most popular topic
+    conn = get_db_connection()
+    topic_data = conn.execute("""
+        SELECT topic, COUNT(*) as count 
+        FROM posts 
+        WHERE topic IS NOT NULL 
+        GROUP BY topic 
+        ORDER BY count DESC 
+        LIMIT 1
+    """).fetchone()
+    conn.close()
 
-        topic_counts = {}
-        for row in posts:
-            topics_list = row["topic"].split(",") if row["topic"] else ["miscellaneous"]
-            for t in topics_list:
-                t = t.strip()
-                topic_counts[t] = topic_counts.get(t, 0) + 1
+    selected_topic = topic_data["topic"] if topic_data else "general"
 
-        most_popular_topic = max(topic_counts, key=topic_counts.get) if topic_counts else "General"
+    # Prepare AI prompt
+    prompt = (
+        f"Using the following brand style guide:\n{style_guide}\n\n"
+        f"Topic: {selected_topic}\n"
+        f"Platform: {platform}\n"
+        f"{platform_instructions.get(platform, 'Generate a general post.')}\n\n"
+        "Response:"
+    )
 
-        # Generate the post using AI
-        platform_instructions = {
-            "blog": "Generate a detailed blog post with a clear structure, engaging introduction, and call-to-action.",
-            "linkedin": "Generate a professional LinkedIn post that is concise, value-driven, and engaging for professionals.",
-            "twitter": "Generate a short and engaging tweet within 280 characters that captures attention quickly."
-        }
+    # Generate AI response
+    generated_response = generate_ai_response_with_style(prompt)
 
-        prompt = (
-            f"Using the following brand style guide:\n{style_guide}\n\n"
-            f"Topic: {most_popular_topic}\n"
-            f"Platform: {platform}\n"
-            f"{platform_instructions.get(platform, 'Generate a general post.')}\n\n"
-            "Response:"
-        )
+    # Calculate Response Alignment Score
+    response_alignment_score = calculate_response_alignment_score(generated_response, style_guide)
 
-        generated_response = generate_ai_response_with_style(prompt)
+    # Calculate Discussion Alignment Score
+    conn = get_db_connection()
+    related_texts = conn.execute("""
+        SELECT post_title, post_content, comments 
+        FROM posts 
+        WHERE topic LIKE ?
+    """, ('%' + selected_topic + '%',)).fetchall()
+    conn.close()
 
-        return jsonify({"response": generated_response, "topic": most_popular_topic})
-    except Exception as e:
-        print("Error in /generate_post:", str(e))
-        return jsonify({"response": "An error occurred. Please try again."}), 500
+    discussion_texts = " ".join(
+        [f"{post['post_title']} {post['post_content']} {post['comments']}" for post in related_texts]
+    )
+    discussion_alignment_score = calculate_discussion_alignment_score(generated_response, discussion_texts)
+
+    # Return JSON with both scores
+    return jsonify({
+        "topic": selected_topic,
+        "response": generated_response,
+        "response_alignment_score": response_alignment_score,
+        "discussion_alignment_score": discussion_alignment_score
+    })
 
 
 @app.route("/copy_post", methods=["POST"])
@@ -173,15 +248,6 @@ def copy_post():
 def edit_post():
     content = request.form.get("content", "")
     return jsonify({"response": content})
-
-
-@app.route("/save_post", methods=["POST"])
-def save_post():
-    content = request.form.get("content", "")
-    if content:
-        return jsonify({"response": content})
-    else:
-        return jsonify({"error": "No content to save"}), 400
 
 
 @app.route("/company_setup", methods=["GET", "POST"])
