@@ -3,15 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard - AI Marketing</title>
+  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
   <style>
     body { background-color: #f8f9fa; }
     .navbar-brand { font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; }
     .container { max-width: 1400px; }
-    .table-responsive { width: 100%; }
-    .table td, .table th { padding: 1.5rem; vertical-align: middle; }
-    .scrollable-box { max-height: 300px; overflow-y: auto; background-color: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px; }
+    .table-container {
+      max-height: 600px; /* Reduced height of posts table */
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    .table td, .table th { padding: 1rem; vertical-align: middle; }
+    .scrollable-box { 
+      max-height: 80px; 
+      overflow-y: auto; 
+      background-color: #fff; 
+      border: 1px solid #dee2e6; 
+      padding: 5px; 
+      border-radius: 4px; 
+      width: 200px; /* Reduced width */
+    }
     .chart-container { margin-bottom: 2rem; }
+    .topics-list { 
+      background-color: #fff; 
+      padding: 15px; 
+      border: 1px solid #dee2e6; 
+      border-radius: 4px; 
+      font-size: 1.1rem;
+    }
+    .topics-list li { margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -32,14 +54,14 @@
   
   <div class="container mt-4">
     <h2 class="mb-4">Posts</h2>
-    <div class="table-responsive">
+    <div class="table-container mb-5">
       <table class="table table-bordered table-hover">
         <thead class="thead-dark">
           <tr>
             <th>ID</th>
             <th>Title</th>
-            <th>Content</th>
-            <th>Comments</th>
+            <th style="width: 220px;">Content</th>  
+            <th style="width: 220px;">Comments</th> 
             <th>Topic</th>
           </tr>
         </thead>
@@ -61,17 +83,29 @@
       </table>
     </div>
     
-    <h2 class="mt-5">Top 15 Topics Distribution</h2>
-    <div id="topic-bar-chart" style="height: 450px;"></div>
+    <div class="row">
+      <!-- Left Column: Bar Chart (Increased Size) -->
+      <div class="col-md-9">
+        <br></br>
+        <h2>Top 15 Topics Distribution</h2>
+        <div id="topic-bar-chart" style="height: 600px; width: 100%;"></div>
+      </div>
+      <!-- Right Column: Topics List -->
+      <div class="col-md-3">
+        <br></br>
+        <h3>Top Topics</h3>
+        <div class="topics-list">
+          <ul class="list-unstyled">
+            {% for t, count in sorted_topics %}
+              <li>
+                <a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
     
-    <h3 class="mt-4">Topics</h3>
-    <ul>
-      {% for t, count in sorted_topics %}
-        <li>
-          <a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)
-        </li>
-      {% endfor %}
-    </ul>
   </div>
   
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

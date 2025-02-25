@@ -1,12 +1,13 @@
-from flask import Flask, render_template, redirect, url_for, request, session
+from flask import Flask, render_template, redirect, url_for, request, session, jsonify
 import sqlite3
 import json
 import plotly.graph_objs as go
 from textblob import TextBlob
 import requests
+import pyperclip
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key"  # Replace with your secure key
+app.secret_key = "your-secret-key"  # Replace with a secure key in production
 
 #############################################
 # Database & Helper Functions
@@ -48,9 +49,7 @@ def get_sentiment(text):
 def generate_topic_chart(posts):
     topic_counts = {}
     for post in posts:
-        # If topic is None, default to "miscellaneous"
         topic = post.get("topic") or "miscellaneous"
-        # Split topic field on comma (if it exists)
         topics_list = [t.strip() for t in topic.split(",") if t.strip()]
         if not topics_list:
             topics_list = ["miscellaneous"]
@@ -75,17 +74,13 @@ def get_confirmed_style_guide():
         return company["style_guide"]
     return None
 
-def generate_ai_response_with_style(post_content, style_guide):
-    prompt = (
-        f"Using the following brand style guide:\n{style_guide}\n\n"
-        f"Generate a detailed response for the following post:\n{post_content}\n\nResponse:"
-    )
-    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"  # Original API key.
+def generate_ai_response_with_style(prompt_text):
+    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     data = {
         "contents": [{
-            "parts": [{"text": prompt}]
+            "parts": [{"text": prompt_text}]
         }]
     }
     try:
@@ -114,7 +109,6 @@ def index():
     posts_with_sentiment = []
     for post in posts:
         post_dict = dict(post)
-        # If ai_response exists, calculate sentiment; otherwise, set sentiment to None.
         if post_dict.get("ai_response"):
             post_dict["sentiment"] = get_sentiment(post_dict["ai_response"])
         else:
@@ -123,7 +117,6 @@ def index():
     
     topic_chart = generate_topic_chart(posts_with_sentiment)
     
-    # Aggregate topics for the clickable list.
     topic_counts = {}
     for post in posts_with_sentiment:
         topic_field = post.get("topic") or "miscellaneous"
@@ -133,50 +126,53 @@ def index():
         for t in topics_list:
             topic_counts[t] = topic_counts.get(t, 0) + 1
     
-    # Sort topics by count descending and take top 15.
     sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
     
     return render_template("index.html", posts=posts_with_sentiment,
                            topic_chart=topic_chart, sorted_topics=sorted_topics)
 
-@app.route("/generate_response/<int:post_id>")
-def generate_response(post_id):
-    conn = get_db_connection()
-    post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
-    conn.close()
-    if not post:
-        return redirect(url_for('index'))
+@app.route("/generate_post", methods=["POST"])
+def generate_post():
     style_guide = get_confirmed_style_guide()
     if not style_guide:
         return "No style guide found. Please set up your company profile."
-    generated_response = generate_ai_response_with_style(post["post_content"], style_guide)
-    conn = get_db_connection()
-    conn.execute("UPDATE posts SET ai_response = ? WHERE id = ?", (generated_response, post_id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
+    
+    topic = request.form.get("topic", "general")
+    platform = request.form.get("platform", "blog")
 
-@app.route("/approve/<int:post_id>", methods=["POST"])
-def approve(post_id):
-    conn = get_db_connection()
-    conn.execute("UPDATE posts SET approved = 1 WHERE id = ?", (post_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
+    platform_instructions = {
+        "blog": "Generate a detailed blog post with a clear structure, engaging introduction, and call-to-action.",
+        "linkedin": "Generate a professional LinkedIn post that is concise, value-driven, and engaging for professionals.",
+        "twitter": "Generate a short and engaging tweet within 280 characters that captures attention quickly."
+    }
 
-@app.route("/edit/<int:post_id>", methods=["GET", "POST"])
-def edit(post_id):
-    conn = get_db_connection()
-    if request.method == "POST":
-        new_response = request.form["ai_response"]
-        conn.execute("UPDATE posts SET ai_response = ? WHERE id = ?", (new_response, post_id))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("index"))
+    prompt = (
+        f"Using the following brand style guide:\n{style_guide}\n\n"
+        f"Topic: {topic}\n"
+        f"Platform: {platform}\n"
+        f"{platform_instructions.get(platform, 'Generate a general post.')}\n\n"
+        "Response:"
+    )
+
+    generated_response = generate_ai_response_with_style(prompt)
+    return jsonify({"response": generated_response})
+
+
+@app.route("/copy_post", methods=["POST"])
+def copy_post():
+    content = request.form.get("content", "")
+    if content:
+        pyperclip.copy(content)
+        return jsonify({"message": "Content copied to clipboard"})
     else:
-        post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
-        conn.close()
-        return render_template("edit.html", post=post)
+        return jsonify({"error": "No content to copy"}), 400
+
+
+@app.route("/edit_post", methods=["POST"])
+def edit_post():
+    content = request.form.get("content", "")
+    return jsonify({"response": content})
+
 
 @app.route("/company_setup", methods=["GET", "POST"])
 def company_setup():
@@ -203,10 +199,10 @@ def company_setup():
         conn.commit()
         conn.close()
         session.pop('style_guide', None)
-        # Redirect to generate_prompt_style so the style guide can be generated.
         return redirect(url_for('generate_prompt_style'))
     conn.close()
     return render_template("company_setup.html", company=company)
+
 
 @app.route("/generate_prompt_style", methods=["GET", "POST"])
 def generate_prompt_style():
@@ -236,32 +232,14 @@ def generate_prompt_style():
             f"Blogs: {company['blogs']}\n"
             f"Keywords: {company['keywords']}\n"
             f"Communities: {company['communities']}\n\n"
-            "Based on the above details, generate a brand style guide and prompt structure that reflects the brand style of writing to be used for content generation. Provide detailed instructions based on the patterns observed."
+            "Based on the above details, generate a brand style guide that reflects the brand style of writing."
         )
         
-        api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        headers = {"Content-Type": "application/json"}
-        data = {
-            "contents": [{
-                "parts": [{"text": prompt_text}]
-            }]
-        }
-        try:
-            response = requests.post(endpoint, headers=headers, json=data, timeout=30)
-            response.raise_for_status()
-            result = response.json()
-            candidates = result.get("candidates", [])
-            if candidates:
-                style_guide = candidates[0]["content"]["parts"][0]["text"]
-            else:
-                style_guide = "No style generated. Please check your prompt or API configuration."
-        except requests.exceptions.RequestException as e:
-            style_guide = f"Error generating style guide: {e}"
-            print("API error:", e)
+        style_guide = generate_ai_response_with_style(prompt_text)
         session['style_guide'] = style_guide
 
     return render_template("generate_prompt_style.html", style_guide=style_guide)
+
 
 @app.route("/edit_style", methods=["GET", "POST"])
 def edit_style():
@@ -270,6 +248,7 @@ def edit_style():
         return redirect(url_for('generate_prompt_style'))
     current_style = session.get('style_guide', '')
     return render_template("edit_style.html", style_guide=current_style)
+
 
 @app.route("/topic_summary/<topic>")
 def topic_summary(topic):
@@ -293,6 +272,7 @@ def topic_summary(topic):
     return render_template("topic_summary.html", topic=topic, total_posts=total_posts,
                            total_upvotes=total_upvotes, total_comments=total_comments,
                            avg_sentiment=avg_sentiment, summary=summary, posts=posts)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
