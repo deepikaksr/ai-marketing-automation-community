@@ -10,7 +10,7 @@
     .navbar-brand { font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; }
     .container { max-width: 1400px; }
     .table-container {
-      max-height: 600px; /* Reduced height of posts table */
+      max-height: 600px; 
       overflow-y: auto;
       border: 1px solid #dee2e6;
       border-radius: 4px;
@@ -23,7 +23,7 @@
       border: 1px solid #dee2e6; 
       padding: 5px; 
       border-radius: 4px; 
-      width: 200px; /* Reduced width */
+      width: 200px; 
     }
     .chart-container { margin-bottom: 2rem; }
     .topics-list { 
@@ -34,8 +34,19 @@
       font-size: 1.1rem;
     }
     .topics-list li { margin-bottom: 10px; }
+    .generated-post-container {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      background-color: #f1f1f1;
+      margin-top: 20px;
+    }
+    .button-group {
+      margin-top: 15px;
+    }
   </style>
 </head>
+
 <body>
   <!-- Navigation Bar with Company Setup Button -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -51,7 +62,7 @@
       <span class="navbar-toggler-icon"></span>
     </button>
   </nav>
-  
+
   <div class="container mt-4">
     <h2 class="mb-4">Posts</h2>
     <div class="table-container mb-5">
@@ -70,52 +81,148 @@
           <tr>
             <td>{{ post['id'] }}</td>
             <td>{{ post['post_title'] }}</td>
-            <td>
-              <div class="scrollable-box">{{ post['post_content'] }}</div>
-            </td>
-            <td>
-              <div class="scrollable-box">{{ post['comments'] }}</div>
-            </td>
+            <td><div class="scrollable-box">{{ post['post_content'] }}</div></td>
+            <td><div class="scrollable-box">{{ post['comments'] }}</div></td>
             <td>{{ post['topic'] if post['topic'] else 'miscellaneous' }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    
+
     <div class="row">
       <!-- Left Column: Bar Chart (Increased Size) -->
       <div class="col-md-9">
-        <br></br>
         <h2>Top 15 Topics Distribution</h2>
         <div id="topic-bar-chart" style="height: 600px; width: 100%;"></div>
+
+        <!-- Buttons below the Bar Chart -->
+        <div class="button-group text-center">
+          <button class="btn btn-primary" onclick="generatePost('blog')">Generate Blog Post</button>
+          <button class="btn btn-info" onclick="generatePost('linkedin')">Generate LinkedIn Post</button>
+          <button class="btn btn-warning" onclick="generatePost('twitter')">Generate Twitter Post</button>
+        </div>
+
+        <!-- Display Generated Post -->
+        <div id="generated-post" class="generated-post-container" style="display: none;">
+          <h4>Topic: <span id="generated-topic"></span></h4>
+          <p id="generated-response"></p>
+          <div class="button-group">
+            <button class="btn btn-success" onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button class="btn btn-secondary" onclick="regeneratePost()">Regenerate</button>
+            <button class="btn btn-dark" onclick="makeCorrections()">Make Corrections</button>
+          </div>
+          <textarea id="edit-area" class="form-control mt-3" style="display: none;"></textarea>
+          <button class="btn btn-primary mt-2" id="save-button" onclick="saveCorrections()" style="display: none;">Save</button>
+        </div>
       </div>
+
       <!-- Right Column: Topics List -->
       <div class="col-md-3">
-        <br></br>
         <h3>Top Topics</h3>
         <div class="topics-list">
           <ul class="list-unstyled">
             {% for t, count in sorted_topics %}
-              <li>
-                <a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)
-              </li>
+              <li><a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)</li>
             {% endfor %}
           </ul>
         </div>
       </div>
     </div>
-    
+
   </div>
-  
+
+  <!-- JS Scripts -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+
   <script>
     var transitionConfig = {duration: 800, easing: 'cubic-in-out'};
     var topic_chart = JSON.parse('{{ topic_chart|tojson|safe }}');
     topic_chart.layout.transition = transitionConfig;
     Plotly.newPlot('topic-bar-chart', topic_chart.data, topic_chart.layout, {responsive: true});
+
+    // Generate Post
+    function generatePost(platform) {
+      fetch(`/generate_post/${platform}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("generated-post").style.display = "block";
+          document.getElementById("generated-topic").innerText = data.topic;
+          document.getElementById("generated-response").innerText = data.response;
+        });
+    }
+
+    // Copy to Clipboard
+    function copyToClipboard() {
+      var text = document.getElementById("generated-response").innerText;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        alert("Content copied to clipboard!");
+      }
+    }
+
+    // Regenerate Post
+    function regeneratePost() {
+      var topic = document.getElementById("generated-topic").innerText;
+      var platform = document.querySelector(".button-group .btn-primary").innerText.toLowerCase().includes("blog") ? "blog"
+                   : document.querySelector(".button-group .btn-info").innerText.toLowerCase().includes("linkedin") ? "linkedin"
+                   : "twitter";
+
+      fetch(`/regenerate_post/${platform}`, {method: "POST"})
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("generated-response").innerText = data.response;
+        });
+    }
+
+    // Make Corrections
+    function makeCorrections() {
+      var response = document.getElementById("generated-response").innerText;
+      document.getElementById("edit-area").style.display = "block";
+      document.getElementById("save-button").style.display = "block";
+      document.getElementById("edit-area").value = response;
+    }
+
+    // Save Corrections without page reload
+    function saveCorrections() {
+      var content = document.getElementById("edit-area").value;
+      fetch("/edit_post", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({content: content})
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          // ✅ Update the generated post with the edited text
+          document.getElementById("generated-response").innerText = data.response;
+          
+          // ✅ Keep the generated post visible
+          document.getElementById("generated-post").style.display = "block";
+          
+          // ✅ Hide the textarea and Save button
+          document.getElementById("edit-area").style.display = "none";
+          document.getElementById("save-button").style.display = "none";
+          
+          // ✅ Show the Edit and Copy buttons again
+          document.getElementById("edit-button").style.display = "inline-block";
+          document.getElementById("copy-button").style.display = "inline-block";
+
+          // ✅ Show a success message without popup
+          showToast("Corrections saved successfully!");
+        } else {
+          showToast("Error: " + data.error);
+        }
+      })
+      .catch(error => {
+        showToast("An error occurred: " + error);
+      });
+    }
+
+
   </script>
+
 </body>
 </html>
