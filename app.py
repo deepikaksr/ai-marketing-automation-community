@@ -42,17 +42,14 @@ def ensure_company_details_table():
 # Chart Generation
 #############################################
 
-def generate_topic_chart(posts):
-    topic_counts = {}
-    for post in posts:
-        topic = post.get("topic", "N/A")
-        topic_counts[topic] = topic_counts.get(topic, 0) + 1
+def generate_topic_chart_from_counts(topic_counts):
     topics = list(topic_counts.keys())
     counts = list(topic_counts.values())
     data = [go.Bar(x=topics, y=counts, marker=dict(color='rgb(26, 118, 255)'))]
     layout = go.Layout(title='Topic Distribution', xaxis=dict(title='Topic'), yaxis=dict(title='Count'))
     fig = go.Figure(data=data, layout=layout)
     return json.loads(fig.to_json())
+
 
 #############################################
 # AI Response Generation using Gemini Flash
@@ -98,20 +95,43 @@ def index():
     conn = get_db_connection()
     posts = conn.execute("SELECT * FROM posts").fetchall()
     conn.close()
-    
+
     posts_to_display = []
     topic_counts = {}
     for post in posts:
         post_dict = dict(post)
-        # We no longer process AI response or sentiment.
-        topic = post_dict.get("topic", "N/A")
-        topic_counts[topic] = topic_counts.get(topic, 0) + 1
+        # Split the topic string on comma to count individual topics:
+        topic_field = post_dict.get("topic", "")
+        if topic_field:
+            topics_list = [t.strip() for t in topic_field.split(",") if t.strip()]
+        else:
+            topics_list = ["miscellaneous"]
+        for t in topics_list:
+            topic_counts[t] = topic_counts.get(t, 0) + 1
         posts_to_display.append(post_dict)
-    
-    topic_chart = generate_topic_chart(posts_to_display)
-    
+
+    # Sort topic_counts by count descending and take the top 15.
+    sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
+    topics = [t[0] for t in sorted_topics]
+    counts = [t[1] for t in sorted_topics]
+
+    # Create a mapping from each unique count to a color.
+    unique_counts = sorted(set(counts))
+    # Define a palette of colors.
+    palette = ['rgb(26, 118, 255)', 'rgb(255, 99, 71)', 'rgb(60, 179, 113)', 'rgb(138, 43, 226)', 'rgb(255, 165, 0)', 'rgb(255, 105, 180)']
+    count_to_color = {}
+    for i, c in enumerate(unique_counts):
+        count_to_color[c] = palette[i % len(palette)]
+    # Now assign colors to each bar based on its count.
+    bar_colors = [count_to_color[c] for c in counts]
+
+    data = [go.Bar(x=topics, y=counts, marker=dict(color=bar_colors))]
+    layout = go.Layout(title='Top 15 Topics Distribution', xaxis=dict(title='Topic'), yaxis=dict(title='Count'))
+    topic_chart = json.loads(go.Figure(data=data, layout=layout).to_json())
+
     return render_template("index.html", posts=posts_to_display,
                            topic_chart=topic_chart, topic_counts=topic_counts)
+
 
 @app.route("/company_setup", methods=["GET", "POST"])
 def company_setup():

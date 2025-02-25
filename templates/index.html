@@ -68,6 +68,7 @@
                 <th>ID</th>
                 <th>Title</th>
                 <th>Content</th>
+                <th>Comments</th>
                 <th>Topic</th>
               </tr>
             </thead>
@@ -79,6 +80,11 @@
                 <td>
                   <div class="scrollable-box">
                     {{ post['post_content'] }}
+                  </div>
+                </td>
+                <td>
+                  <div class="scrollable-box">
+                    {{ post['comments'] }}
                   </div>
                 </td>
                 <td>{{ post['topic'] if post['topic'] else 'N/A' }}</td>
@@ -111,10 +117,7 @@
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Transition configuration for a dynamic effect.
     var transitionConfig = {duration: 800, easing: 'cubic-in-out'};
-
-    // Render the topic distribution bar chart.
     var topic_chart = JSON.parse('{{ topic_chart|tojson|safe }}');
     topic_chart.layout.transition = transitionConfig;
     Plotly.newPlot('topic-bar-chart', topic_chart.data, topic_chart.layout, {responsive: true});
