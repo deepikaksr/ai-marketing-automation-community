@@ -3,48 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard - AI Marketing</title>
-  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
   <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .navbar-brand {
-      font-size: 2.5rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-    }
-    .container {
-      max-width: 1400px;
-    }
-    .table-responsive {
-      width: 100%;
-    }
-    .table td, .table th {
-      padding: 1.5rem;
-      vertical-align: middle;
-    }
-    .scrollable-box {
-      max-height: 300px;
-      overflow-y: auto;
-      background-color: #fff;
-      border: 1px solid #dee2e6;
-      padding: 15px;
-      border-radius: 4px;
-    }
-    .chart-container {
-      margin-bottom: 2rem;
-    }
+    body { background-color: #f8f9fa; }
+    .navbar-brand { font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; }
+    .container { max-width: 1400px; }
+    .table-responsive { width: 100%; }
+    .table td, .table th { padding: 1.5rem; vertical-align: middle; }
+    .scrollable-box { max-height: 300px; overflow-y: auto; background-color: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px; }
+    .chart-container { margin-bottom: 2rem; }
   </style>
 </head>
 <body>
-  <!-- Navigation Bar -->
+  <!-- Navigation Bar with Company Setup Button -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <a class="navbar-brand" href="{{ url_for('index') }}">AI Marketing Dashboard</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" 
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ml-auto">
         <li class="nav-item">
@@ -52,67 +25,55 @@
         </li>
       </ul>
     </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
   </nav>
-
+  
   <div class="container mt-4">
-    <!-- Posts Card -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-white">
-        <h3 class="mb-0">Posts</h3>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover">
-            <thead class="thead-dark">
-              <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Content</th>
-                <th>Comments</th>
-                <th>Topic</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for post in posts %}
-              <tr>
-                <td>{{ post['id'] }}</td>
-                <td>{{ post['post_title'] }}</td>
-                <td>
-                  <div class="scrollable-box">
-                    {{ post['post_content'] }}
-                  </div>
-                </td>
-                <td>
-                  <div class="scrollable-box">
-                    {{ post['comments'] }}
-                  </div>
-                </td>
-                <td>{{ post['topic'] if post['topic'] else 'N/A' }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <h2 class="mb-4">Posts</h2>
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead class="thead-dark">
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Content</th>
+            <th>Comments</th>
+            <th>Topic</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in posts %}
+          <tr>
+            <td>{{ post['id'] }}</td>
+            <td>{{ post['post_title'] }}</td>
+            <td>
+              <div class="scrollable-box">{{ post['post_content'] }}</div>
+            </td>
+            <td>
+              <div class="scrollable-box">{{ post['comments'] }}</div>
+            </td>
+            <td>{{ post['topic'] if post['topic'] else 'miscellaneous' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <!-- Analytics Card: Topic Distribution Bar Chart -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-white">
-        <h4 class="mb-0">Analytics</h4>
-      </div>
-      <div class="card-body">
-        <div class="row chart-container">
-          <div class="col-md-12">
-            <h5>Topic Distribution (Bar Chart)</h5>
-            <div id="topic-bar-chart" style="height: 450px;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
+    <h2 class="mt-5">Top 15 Topics Distribution</h2>
+    <div id="topic-bar-chart" style="height: 450px;"></div>
+    
+    <h3 class="mt-4">Topics</h3>
+    <ul>
+      {% for t, count in sorted_topics %}
+        <li>
+          <a href="{{ url_for('topic_summary', topic=t) }}">{{ t }}</a> ({{ count }} posts)
+        </li>
+      {% endfor %}
+    </ul>
   </div>
-
-  <!-- Plotly and Bootstrap JS -->
+  
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>

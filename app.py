@@ -1,11 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, request, session
 import sqlite3
-import plotly.graph_objs as go
 import json
+import plotly.graph_objs as go
+from textblob import TextBlob
 import requests
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key"  # Replace with a secure key in production
+app.secret_key = "your-secret-key"  # Replace with your secure key
 
 #############################################
 # Database & Helper Functions
@@ -13,13 +14,12 @@ app.secret_key = "your-secret-key"  # Replace with a secure key in production
 
 def get_db_connection():
     conn = sqlite3.connect('data.db')
-    conn.row_factory = sqlite3.Row  # Allows accessing columns by name.
+    conn.row_factory = sqlite3.Row  # Access columns by name.
     return conn
 
 def ensure_company_details_table():
     conn = get_db_connection()
     cur = conn.cursor()
-    # Create company_details table if it doesn't exist.
     cur.execute('''
         CREATE TABLE IF NOT EXISTS company_details (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,17 +39,29 @@ def ensure_company_details_table():
     conn.close()
 
 #############################################
-# Chart Generation
+# Sentiment and Chart Generation
 #############################################
 
-def generate_topic_chart_from_counts(topic_counts):
+def get_sentiment(text):
+    return TextBlob(text).sentiment.polarity
+
+def generate_topic_chart(posts):
+    topic_counts = {}
+    for post in posts:
+        # If topic is None, default to "miscellaneous"
+        topic = post.get("topic") or "miscellaneous"
+        # Split topic field on comma (if it exists)
+        topics_list = [t.strip() for t in topic.split(",") if t.strip()]
+        if not topics_list:
+            topics_list = ["miscellaneous"]
+        for t in topics_list:
+            topic_counts[t] = topic_counts.get(t, 0) + 1
     topics = list(topic_counts.keys())
     counts = list(topic_counts.values())
     data = [go.Bar(x=topics, y=counts, marker=dict(color='rgb(26, 118, 255)'))]
     layout = go.Layout(title='Topic Distribution', xaxis=dict(title='Topic'), yaxis=dict(title='Count'))
     fig = go.Figure(data=data, layout=layout)
     return json.loads(fig.to_json())
-
 
 #############################################
 # AI Response Generation using Gemini Flash
@@ -68,11 +80,14 @@ def generate_ai_response_with_style(post_content, style_guide):
         f"Using the following brand style guide:\n{style_guide}\n\n"
         f"Generate a detailed response for the following post:\n{post_content}\n\nResponse:"
     )
-    # Use Gemini Flash API with your original API key.
-    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
+    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"  # Original API key.
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
+    data = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
     try:
         response = requests.post(endpoint, headers=headers, json=data, timeout=60)
         response.raise_for_status()
@@ -96,42 +111,72 @@ def index():
     posts = conn.execute("SELECT * FROM posts").fetchall()
     conn.close()
 
-    posts_to_display = []
-    topic_counts = {}
+    posts_with_sentiment = []
     for post in posts:
         post_dict = dict(post)
-        # Split the topic string on comma to count individual topics:
-        topic_field = post_dict.get("topic", "")
-        if topic_field:
-            topics_list = [t.strip() for t in topic_field.split(",") if t.strip()]
+        # If ai_response exists, calculate sentiment; otherwise, set sentiment to None.
+        if post_dict.get("ai_response"):
+            post_dict["sentiment"] = get_sentiment(post_dict["ai_response"])
         else:
+            post_dict["sentiment"] = None
+        posts_with_sentiment.append(post_dict)
+    
+    topic_chart = generate_topic_chart(posts_with_sentiment)
+    
+    # Aggregate topics for the clickable list.
+    topic_counts = {}
+    for post in posts_with_sentiment:
+        topic_field = post.get("topic") or "miscellaneous"
+        topics_list = [t.strip() for t in topic_field.split(",") if t.strip()]
+        if not topics_list:
             topics_list = ["miscellaneous"]
         for t in topics_list:
             topic_counts[t] = topic_counts.get(t, 0) + 1
-        posts_to_display.append(post_dict)
-
-    # Sort topic_counts by count descending and take the top 15.
+    
+    # Sort topics by count descending and take top 15.
     sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
-    topics = [t[0] for t in sorted_topics]
-    counts = [t[1] for t in sorted_topics]
+    
+    return render_template("index.html", posts=posts_with_sentiment,
+                           topic_chart=topic_chart, sorted_topics=sorted_topics)
 
-    # Create a mapping from each unique count to a color.
-    unique_counts = sorted(set(counts))
-    # Define a palette of colors.
-    palette = ['rgb(26, 118, 255)', 'rgb(255, 99, 71)', 'rgb(60, 179, 113)', 'rgb(138, 43, 226)', 'rgb(255, 165, 0)', 'rgb(255, 105, 180)']
-    count_to_color = {}
-    for i, c in enumerate(unique_counts):
-        count_to_color[c] = palette[i % len(palette)]
-    # Now assign colors to each bar based on its count.
-    bar_colors = [count_to_color[c] for c in counts]
+@app.route("/generate_response/<int:post_id>")
+def generate_response(post_id):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+    conn.close()
+    if not post:
+        return redirect(url_for('index'))
+    style_guide = get_confirmed_style_guide()
+    if not style_guide:
+        return "No style guide found. Please set up your company profile."
+    generated_response = generate_ai_response_with_style(post["post_content"], style_guide)
+    conn = get_db_connection()
+    conn.execute("UPDATE posts SET ai_response = ? WHERE id = ?", (generated_response, post_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
-    data = [go.Bar(x=topics, y=counts, marker=dict(color=bar_colors))]
-    layout = go.Layout(title='Top 15 Topics Distribution', xaxis=dict(title='Topic'), yaxis=dict(title='Count'))
-    topic_chart = json.loads(go.Figure(data=data, layout=layout).to_json())
+@app.route("/approve/<int:post_id>", methods=["POST"])
+def approve(post_id):
+    conn = get_db_connection()
+    conn.execute("UPDATE posts SET approved = 1 WHERE id = ?", (post_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
 
-    return render_template("index.html", posts=posts_to_display,
-                           topic_chart=topic_chart, topic_counts=topic_counts)
-
+@app.route("/edit/<int:post_id>", methods=["GET", "POST"])
+def edit(post_id):
+    conn = get_db_connection()
+    if request.method == "POST":
+        new_response = request.form["ai_response"]
+        conn.execute("UPDATE posts SET ai_response = ? WHERE id = ?", (new_response, post_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for("index"))
+    else:
+        post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+        conn.close()
+        return render_template("edit.html", post=post)
 
 @app.route("/company_setup", methods=["GET", "POST"])
 def company_setup():
@@ -158,6 +203,7 @@ def company_setup():
         conn.commit()
         conn.close()
         session.pop('style_guide', None)
+        # Redirect to generate_prompt_style so the style guide can be generated.
         return redirect(url_for('generate_prompt_style'))
     conn.close()
     return render_template("company_setup.html", company=company)
@@ -183,18 +229,24 @@ def generate_prompt_style():
         conn.close()
         if not company:
             return "No company details found. Please set up your company profile first."
+        
         prompt_text = (
             f"Company Name: {company['company_name']}\n"
             f"Company Profile: {company['company_profile']}\n"
             f"Blogs: {company['blogs']}\n"
             f"Keywords: {company['keywords']}\n"
             f"Communities: {company['communities']}\n\n"
-            "Based on the above details, generate a brand style guide and prompt structure that reflects the brand style of writing that will be further used as a prompt to generate content of similar style. So give me detailed instructions based on all the patterns you observe from the written style of these content."
+            "Based on the above details, generate a brand style guide and prompt structure that reflects the brand style of writing to be used for content generation. Provide detailed instructions based on the patterns observed."
         )
+        
         api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         headers = {"Content-Type": "application/json"}
-        data = {"contents": [{"parts": [{"text": prompt_text}]}]}
+        data = {
+            "contents": [{
+                "parts": [{"text": prompt_text}]
+            }]
+        }
         try:
             response = requests.post(endpoint, headers=headers, json=data, timeout=30)
             response.raise_for_status()
@@ -218,6 +270,29 @@ def edit_style():
         return redirect(url_for('generate_prompt_style'))
     current_style = session.get('style_guide', '')
     return render_template("edit_style.html", style_guide=current_style)
+
+@app.route("/topic_summary/<topic>")
+def topic_summary(topic):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    posts = cur.execute("SELECT * FROM posts WHERE topic LIKE ?", ('%' + topic + '%',)).fetchall()
+    conn.close()
+    posts = [dict(post) for post in posts]
+    
+    if not posts:
+        return f"No posts found for topic: {topic}"
+    
+    total_posts = len(posts)
+    total_upvotes = sum(post["score"] if post["score"] is not None else 0 for post in posts)
+    total_comments = sum(post["num_comments"] if post["num_comments"] is not None else 0 for post in posts)
+    
+    combined_texts = " ".join([post["post_title"] + " " + (post["post_content"] or "") + " " + (post["comments"] or "") for post in posts])
+    avg_sentiment = TextBlob(combined_texts).sentiment.polarity if combined_texts else 0
+    summary = combined_texts[:150] + "..." if len(combined_texts) > 150 else combined_texts
+
+    return render_template("topic_summary.html", topic=topic, total_posts=total_posts,
+                           total_upvotes=total_upvotes, total_comments=total_comments,
+                           avg_sentiment=avg_sentiment, summary=summary, posts=posts)
 
 if __name__ == "__main__":
     app.run(debug=True)

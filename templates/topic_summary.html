@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Topic Summary - {{ topic }}</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f8f9fa; }
+    .container { max-width: 1000px; margin-top: 30px; }
+    .summary-box { background-color: #fff; padding: 20px; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 20px; }
+    .post-box { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mb-4">Summary for Topic: {{ topic }}</h1>
+    <div class="summary-box mb-4">
+      <p><strong>Total Posts:</strong> {{ total_posts }}</p>
+      <p><strong>Total Upvotes:</strong> {{ total_upvotes }}</p>
+      <p><strong>Total Comments:</strong> {{ total_comments }}</p>
+      <p><strong>Average Sentiment:</strong> {{ avg_sentiment | round(2) }}</p>
+      <p><strong>Summary:</strong> {{ summary }}</p>
+    </div>
+    <h3>Posts in this Topic</h3>
+    {% for post in posts %}
+      <div class="post-box card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">{{ post.post_title }}</h5>
+          <p class="card-text"><strong>Content:</strong> {{ post.post_content }}</p>
+          <p class="card-text"><strong>Comments:</strong> <em>{{ post.comments }}</em></p>
+          <p class="card-text">
+            <small class="text-muted">Upvotes: {{ post.score }} | Comments: {{ post.num_comments }}</small>
+          </p>
+        </div>
+      </div>
+    {% endfor %}
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Dashboard</a>
+  </div>
+</body>
+</html>
