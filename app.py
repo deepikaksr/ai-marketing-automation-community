@@ -8,6 +8,8 @@ import requests
 import pyperclip
 from sentence_transformers import SentenceTransformer, util
 
+import topic_modeling
+
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
 
@@ -43,7 +45,6 @@ def ensure_company_details_table():
 def get_sentiment(text):
     return TextBlob(text).sentiment.polarity
 
-
 def generate_topic_chart(posts):
     topic_counts = {}
     for post in posts:
@@ -65,26 +66,30 @@ def generate_topic_chart(posts):
     unique_counts = sorted(set(counts), reverse=True)
 
     # Predefined colors + random fallback if needed
-    predefined_colors = ['rgb(26, 118, 255)', 'rgb(255, 153, 51)', 'rgb(0, 204, 102)', 
-                         'rgb(204, 51, 255)', 'rgb(255, 102, 102)', 'rgb(102, 204, 255)', 
-                         'rgb(255, 204, 102)', 'rgb(102, 255, 178)', 'rgb(178, 102, 255)', 
-                         'rgb(255, 178, 102)']
+    predefined_colors = [
+        'rgb(26, 118, 255)', 'rgb(255, 153, 51)', 'rgb(0, 204, 102)', 
+        'rgb(204, 51, 255)', 'rgb(255, 102, 102)', 'rgb(102, 204, 255)', 
+        'rgb(255, 204, 102)', 'rgb(102, 255, 178)', 'rgb(178, 102, 255)', 
+        'rgb(255, 178, 102)'
+    ]
 
-    # Dynamically generate additional colors if needed
     while len(predefined_colors) < len(unique_counts):
-        predefined_colors.append(f'rgb({random.randint(0,255)}, {random.randint(0,255)}, {random.randint(0,255)})')
+        predefined_colors.append(
+            f'rgb({random.randint(0,255)}, {random.randint(0,255)}, {random.randint(0,255)})'
+        )
 
     color_dict = dict(zip(unique_counts, predefined_colors))
     bar_colors = [color_dict[count] for count in counts]
 
     # Plotly Bar Chart
     data = [go.Bar(x=topics, y=counts, marker=dict(color=bar_colors))]
-    layout = go.Layout(title='Top 15 Topics Distribution', 
-                       xaxis=dict(title='Topic'), 
-                       yaxis=dict(title='Count'))
+    layout = go.Layout(
+        title='Top 15 Topics Distribution', 
+        xaxis=dict(title='Topic'), 
+        yaxis=dict(title='Count')
+    )
     fig = go.Figure(data=data, layout=layout)
     return json.loads(fig.to_json())
-
 
 #############################################
 # AI Response Generation using Gemini Flash
@@ -166,8 +171,12 @@ def index():
     
     sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)[:15]
     
-    return render_template("index.html", posts=posts_with_sentiment,
-                           topic_chart=topic_chart, sorted_topics=sorted_topics)
+    return render_template(
+        "index.html",
+        posts=posts_with_sentiment,
+        topic_chart=topic_chart,
+        sorted_topics=sorted_topics
+    )
 
 @app.route("/generate_post", methods=["POST"])
 def generate_post():
@@ -233,7 +242,6 @@ def generate_post():
         "discussion_alignment_score": discussion_alignment_score
     })
 
-
 @app.route("/copy_post", methods=["POST"])
 def copy_post():
     content = request.form.get("content", "")
@@ -243,12 +251,10 @@ def copy_post():
     else:
         return jsonify({"error": "No content to copy"}), 400
 
-
 @app.route("/edit_post", methods=["POST"])
 def edit_post():
     content = request.form.get("content", "")
     return jsonify({"response": content})
-
 
 @app.route("/company_setup", methods=["GET", "POST"])
 def company_setup():
@@ -260,7 +266,8 @@ def company_setup():
         company_profile = request.form["company_profile"]
         blogs = request.form["blogs"]
         keywords = request.form["keywords"]
-        communities = request.form["communities"]
+        communities = request.form["communities"]  # <-- The user enters subreddit(s) here
+
         if company:
             conn.execute('''
                 UPDATE company_details
@@ -278,7 +285,6 @@ def company_setup():
         return redirect(url_for('generate_prompt_style'))
     conn.close()
     return render_template("company_setup.html", company=company)
-
 
 @app.route("/generate_prompt_style", methods=["GET", "POST"])
 def generate_prompt_style():
@@ -316,7 +322,6 @@ def generate_prompt_style():
 
     return render_template("generate_prompt_style.html", style_guide=style_guide)
 
-
 @app.route("/edit_style", methods=["GET", "POST"])
 def edit_style():
     if request.method == "POST":
@@ -324,7 +329,6 @@ def edit_style():
         return redirect(url_for('generate_prompt_style'))
     current_style = session.get('style_guide', '')
     return render_template("edit_style.html", style_guide=current_style)
-
 
 @app.route("/topic_summary/<topic>")
 def topic_summary(topic):
@@ -345,10 +349,41 @@ def topic_summary(topic):
     avg_sentiment = TextBlob(combined_texts).sentiment.polarity if combined_texts else 0
     summary = combined_texts[:150] + "..." if len(combined_texts) > 150 else combined_texts
 
-    return render_template("topic_summary.html", topic=topic, total_posts=total_posts,
-                           total_upvotes=total_upvotes, total_comments=total_comments,
-                           avg_sentiment=avg_sentiment, summary=summary, posts=posts)
+    return render_template(
+        "topic_summary.html",
+        topic=topic,
+        total_posts=total_posts,
+        total_upvotes=total_upvotes,
+        total_comments=total_comments,
+        avg_sentiment=avg_sentiment,
+        summary=summary,
+        posts=posts
+    )
 
+#############################################
+# New Route to Run Topic Modeling
+#############################################
+@app.route("/run_topic_modeling")
+def run_topic_modeling_route():
+    """
+    Reads the last-saved 'communities' from company_details,
+    calls run_topic_modeling using that as the subreddit name,
+    and returns a simple message or you can redirect to /
+    """
+    ensure_company_details_table()
+    conn = get_db_connection()
+    company = conn.execute("SELECT * FROM company_details ORDER BY id DESC LIMIT 1").fetchone()
+    conn.close()
+    if not company:
+        return "No company details found. Please set up your company profile first."
+
+    # Assume the user typed something like "LocalLLaMA" or "AskReddit" in the communities field.
+    # If multiple communities are listed, take the first one.
+    communities_field = company["communities"] or "LocalLLaMA"
+    subreddit_name = communities_field.split(",")[0].strip()
+
+    topic_modeling.run_topic_modeling(subreddit_name=subreddit_name, limit=50)
+    return "Topic modeling completed successfully! Check the console logs for details."
 
 if __name__ == "__main__":
     app.run(debug=True)

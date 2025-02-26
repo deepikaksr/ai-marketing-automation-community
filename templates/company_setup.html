@@ -208,11 +208,14 @@
 
           <div class="form-group">
             <label for="communities" class="form-label">
-              <i class="fas fa-users form-icon"></i>Communities
+              <i class="fas fa-users form-icon"></i>Communities (Subreddit Name)
             </label>
             <input type="text" class="form-control" id="communities" name="communities"
                    value="{{ company['communities'] if company else '' }}">
-            <div class="helper-text">List online communities where your audience gathers, separated by commas.</div>
+            <div class="helper-text">
+              Enter the subreddit(s) you want to analyze (e.g., <strong>AskReddit</strong>, <strong>LocalLLaMA</strong>). 
+              Separate multiple names by commas.
+            </div>
           </div>
 
           <!-- Submit Button with Loading Spinner -->
