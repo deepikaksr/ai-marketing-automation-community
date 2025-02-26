@@ -3,29 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <title>Edit Generated Style Guide</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
+    :root {
+      --light-bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --accent: #4361ee;
+      --accent-hover: #3a56d4;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --border: #dee2e6;
+    }
+    
     body {
-      background-color: #f8f9fa;
+      background-color: var(--light-bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin-top: 50px;
+    }
+    
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-header {
+      background-color: var(--accent);
+      color: white;
+      border-bottom: none;
+      border-radius: 10px 10px 0 0 !important;
+      padding: 1.2rem 1.5rem;
+    }
+    
+    .card-header h3 {
+      margin-bottom: 0;
+      font-weight: 600;
+    }
+    
+    .card-body {
+      padding: 2rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+      background-color: #f5f7fa;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.8rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    
+    .form-control:focus {
+      background-color: #f5f7fa;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+      color: var(--text);
+    }
+    
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      padding: 0.7rem 2rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    textarea.form-control {
+      line-height: 1.5;
+      font-size: 0.95rem;
+      min-height: 800px;
+    }
+    
+    .header-icon {
+      margin-right: 0.5rem;
+    }
+    
+    .btn-icon {
+      margin-right: 0.5rem;
     }
   </style>
 </head>
 <body>
-  <div class="container mt-5">
-    <div class="card shadow-sm">
-      <div class="card-header bg-secondary text-white">
-        <h3 class="mb-0">Edit Generated Style Guide</h3>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0"><i class="fas fa-pen-fancy header-icon"></i>Edit Generated Style Guide</h3>
       </div>
       <div class="card-body">
         <form action="{{ url_for('edit_style') }}" method="post">
           <div class="form-group">
-            <label for="style_guide">Style Guide</label>
-            <textarea class="form-control" id="style_guide" name="style_guide" rows="10" required style="white-space: pre-wrap;">{{ style_guide }}</textarea>
+            <label for="style_guide" class="form-label">
+              <i class="fas fa-feather-alt me-2"></i>Style Guide
+            </label>
+            <textarea class="form-control" id="style_guide" name="style_guide" rows="20" required style="white-space: pre-wrap;">{{ style_guide }}</textarea>
           </div>
-          <button type="submit" class="btn btn-primary">Save & Return</button>
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save btn-icon"></i>Save & Return
+            </button>
+          </div>
         </form>
       </div>
     </div>
   </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -3,79 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <title>Company Setup</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
+    :root {
+      --light-bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --accent: #0066cc; /* Professional blue accent */
+      --accent-hover: #0055b3;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --border: #dee2e6;
+      --input-bg: #f5f7fa;
+    }
+    
     body {
-      background-color: #f8f9fa;
+      background-color: var(--light-bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
     }
+    
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin-top: 50px;
+      margin-bottom: 50px;
     }
+    
     .card {
-      border-radius: 8px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
     }
+    
     .card-header {
-      font-size: 1.5rem;
-      font-weight: bold;
+      background-color: var(--accent);
+      border-bottom: none;
+      padding: 1.3rem 1.5rem;
+      text-align: center;
     }
+    
+    .card-header h3 {
+      margin-bottom: 0;
+      font-weight: 600;
+      color: white;
+      font-size: 1.6rem;
+    }
+    
+    .card-body {
+      padding: 2.5rem;
+    }
+    
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.8rem;
     }
+    
+    .form-label {
+      color: var(--accent);
+      font-weight: 500;
+      font-size: 1.05rem;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .form-icon {
+      margin-right: 0.5rem;
+    }
+    
+    .form-control {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      transition: all 0.3s;
+      font-size: 1rem;
+    }
+    
+    .form-control:focus {
+      background-color: var(--input-bg);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
+      color: var(--text);
+    }
+    
+    textarea.form-control {
+      min-height: 100px;
+      line-height: 1.5;
+    }
+    
+    .btn-primary {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      padding: 0.8rem 2.5rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+    
     .loading-spinner {
       display: none;
       justify-content: center;
       align-items: center;
       height: 80px;
-      margin-top: 20px;
+      margin-top: 30px;
     }
+    
     .spinner-border {
       width: 3rem;
       height: 3rem;
-      color: #007bff;
+      color: var(--accent);
+    }
+    
+    .helper-text {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+    
+    /* Enhanced textarea styling */
+    #blogs, #company_profile {
+      resize: vertical;
+    }
+    
+    /* Field animations */
+    .form-control {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .form-control:focus::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--accent);
+      animation: formFocus 0.3s ease-in-out;
+    }
+    
+    @keyframes formFocus {
+      0% { width: 0; }
+      100% { width: 100%; }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="card shadow-sm">
-      <div class="card-header bg-info text-white text-center">
-        <h3 class="mb-0">{{ company and "Edit" or "Set Up" }} Company Details</h3>
+    <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0">
+          <i class="fas fa-building me-2"></i>
+          {{ company and "Edit" or "Set Up" }} Company Details
+        </h3>
       </div>
       <div class="card-body">
         <form id="companyForm" action="{{ url_for('company_setup') }}" method="post">
           <div class="form-group">
-            <label for="company_name">Company Name</label>
+            <label for="company_name" class="form-label">
+              <i class="fas fa-signature form-icon"></i>Company Name
+            </label>
             <input type="text" class="form-control" id="company_name" name="company_name" required
                    value="{{ company['company_name'] if company else '' }}">
           </div>
 
           <div class="form-group">
-            <label for="company_profile">Company Profile</label>
+            <label for="company_profile" class="form-label">
+              <i class="fas fa-id-card form-icon"></i>Company Profile
+            </label>
             <textarea class="form-control" id="company_profile" name="company_profile" rows="4" required>{{ company['company_profile'] if company else '' }}</textarea>
+            <div class="helper-text">Describe your company's mission, products, services, and target audience.</div>
           </div>
 
           <div class="form-group">
-            <label for="blogs">Blogs (enter 20–25 blog links, comma-separated)</label>
+            <label for="blogs" class="form-label">
+              <i class="fas fa-rss form-icon"></i>Blogs
+            </label>
             <textarea class="form-control" id="blogs" name="blogs" rows="6" required>{{ company['blogs'] if company else '' }}</textarea>
+            <div class="helper-text">Enter 20–25 blog links, separated by commas. These will be used for content analysis.</div>
           </div>
 
           <div class="form-group">
-            <label for="keywords">Keywords (comma-separated)</label>
+            <label for="keywords" class="form-label">
+              <i class="fas fa-tags form-icon"></i>Keywords
+            </label>
             <input type="text" class="form-control" id="keywords" name="keywords" required
                    value="{{ company['keywords'] if company else '' }}">
+            <div class="helper-text">Enter keywords relevant to your business, separated by commas.</div>
           </div>
 
           <div class="form-group">
-            <label for="communities">Communities</label>
+            <label for="communities" class="form-label">
+              <i class="fas fa-users form-icon"></i>Communities
+            </label>
             <input type="text" class="form-control" id="communities" name="communities"
                    value="{{ company['communities'] if company else '' }}">
+            <div class="helper-text">List online communities where your audience gathers, separated by commas.</div>
           </div>
 
           <!-- Submit Button with Loading Spinner -->
-          <div class="text-center">
-            <button type="submit" id="submitButton" class="btn btn-primary btn-lg">
+          <div class="text-center mt-4">
+            <button type="submit" id="submitButton" class="btn btn-primary">
+              <i class="fas fa-{{ company and 'sync' or 'save' }} me-2"></i>
               {{ company and "Update Details" or "Submit" }}
             </button>
           </div>
@@ -83,7 +226,7 @@
           <!-- Loading Spinner -->
           <div id="loadingSpinner" class="loading-spinner">
             <div class="spinner-border" role="status">
-              <span class="sr-only">Processing...</span>
+              <span class="visually-hidden">Processing...</span>
             </div>
           </div>
         </form>
@@ -92,8 +235,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     // Show Loading Spinner When Form Is Submitted
@@ -101,7 +244,22 @@
       document.getElementById('submitButton').disabled = true;
       document.getElementById('loadingSpinner').style.display = 'flex';
     });
+    
+    // Form validation enhancement
+    const form = document.getElementById('companyForm');
+    const submitButton = document.getElementById('submitButton');
+    
+    // Add subtle animations on input focus
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+      input.addEventListener('focus', () => {
+        input.parentElement.querySelector('.form-label').style.color = 'var(--accent-hover)';
+      });
+      
+      input.addEventListener('blur', () => {
+        input.parentElement.querySelector('.form-label').style.color = 'var(--accent)';
+      });
+    });
   </script>
-
 </body>
 </html>

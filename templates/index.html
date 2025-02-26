@@ -6,137 +6,466 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
   <style>
-    body { background-color: #f8f9fa; }
-    .navbar-brand { font-size: 2.5rem; font-weight: 700; letter-spacing: 1px; }
-    .container { max-width: 1400px; }
+    /* Root Variables - Light Theme Color Palette */
+    :root {
+      --bg-light: #f5f7fa;
+      --bg-card: #ffffff;
+      --bg-element: #f0f2f6;
+      --text-primary: #333333;
+      --text-secondary: #707070;
+      --accent-primary: #6558db;
+      --accent-secondary: #536dfe;
+      --accent-success: #00c853;
+      --accent-warning: #ff9800;
+      --accent-info: #0288d1;
+      --border-color: #e1e4e8;
+      --hover-bg: rgba(101, 88, 219, 0.08);
+      --table-header-bg: #eaecff;
+      --table-header-text: #444444;
+    }
+
+    /* Basic Page Styles */
+    body { 
+      background-color: var(--bg-light); 
+      color: var(--text-primary);
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+    }
+
+    /* Navigation Bar Styles */
+    .navbar {
+      background-color: var(--bg-card) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 30px;
+      padding: 15px 20px;
+    }
+
+    .navbar-brand { 
+      font-size: 3rem; /* Increased size from 2.5rem to 3rem */
+      font-weight: 700; 
+      letter-spacing: 1px; 
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      padding: 5px 0;
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .navbar-brand::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    }
+
+    .navbar-dark .navbar-toggler {
+      border-color: var(--accent-primary);
+    }
+
+    /* Layout & Container Styles */
+    .container { 
+      max-width: 1600px; 
+      margin-bottom: 40px;
+      width: 90%;
+    }
+
+    /* Typography Styles */
+    h2, h3, h4 {
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-top: 30px;
+      margin-bottom: 20px;
+    }
+
+    /* Table Styles */
     .table-container {
       max-height: 600px;
       overflow-y: auto;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: var(--bg-card);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 40px;
     }
-    .table td, .table th { padding: 1rem; vertical-align: middle; }
-    .scrollable-box {
-      max-height: 80px;
-      overflow-y: auto;
-      background-color: #fff;
-      border: 1px solid #dee2e6;
-      padding: 5px;
-      border-radius: 4px;
-      width: 200px;
-    }
-    .chart-container { margin-bottom: 2rem; }
-    .topics-list {
-      background-color: #fff;
-      padding: 15px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
+
+    .table {
+      color: var(--text-primary);
+      background-color: var(--bg-card);
       font-size: 1.1rem;
     }
-    .topics-list li { margin-bottom: 10px; }
 
-    /* Increased size of the box where the post is displayed */
+    .table td, .table th { 
+      padding: 1.2rem; 
+      vertical-align: middle; 
+      border-color: var(--border-color);
+    }
+
+    .table-bordered {
+      border-color: var(--border-color);
+    }
+
+    /* Modified table header styles - more subtle */
+    .thead-light {
+      background-color: var(--table-header-bg) !important;
+      color: var(--table-header-text) !important;
+    }
+
+    .thead-light th {
+      background-color: var(--table-header-bg) !important;
+      border-color: #d8dcfc !important;
+      color: var(--table-header-text) !important;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Table Hover Styles */
+    .table-hover tbody tr:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    /* Scrollable Box Styles */
+    .scrollable-box {
+      max-height: 85px;
+      overflow-y: auto;
+      background-color: var(--bg-element);
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      border-radius: 6px;
+      width: 230px;
+      color: var(--text-primary);
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-primary) var(--bg-element);
+    }
+
+    .table-hover tbody tr:hover .scrollable-box {
+      background-color: var(--bg-element);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 6px rgba(101, 88, 219, 0.4);
+    }
+
+    .scrollable-box::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollable-box::-webkit-scrollbar-thumb {
+      background-color: var(--accent-primary);
+      border-radius: 6px;
+    }
+
+    /* Chart Container Styles */
+    .chart-container { 
+      margin-bottom: 3.5rem; 
+      background-color: var(--bg-card);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Topics List Styles */
+    .topics-list {
+      background-color: var(--bg-card);
+      padding: 25px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      margin-bottom: 35px;
+    }
+
+    .topics-list li { 
+      margin-bottom: 12px; 
+    }
+
+    .topics-list a {
+      color: var(--accent-secondary);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      font-weight: 500;
+    }
+
+    .topics-list a:hover {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    /* Generated Post Box Styles */
     .generated-post-box {
-      max-height: 400px;
-      min-height: 300px;
+      max-height: 450px;
+      min-height: 320px;
       width: 100%;
       overflow-y: auto;
-      background-color: #fff;
-      border: 1px solid #dee2e6;
-      padding: 15px;
-      border-radius: 8px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 25px;
+      border-radius: 12px;
       font-size: 1.2rem;
       line-height: 1.6;
+      color: var(--text-primary);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-primary) var(--bg-card);
+      margin-bottom: 35px;
     }
 
-    /* Textarea for editing */
+    .generated-post-box::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .generated-post-box::-webkit-scrollbar-thumb {
+      background-color: var(--accent-primary);
+      border-radius: 6px;
+    }
+
+    /* Textarea for Editing Styles */
     #post-edit-textarea {
       width: 100%;
-      min-height: 300px;
-      border: 1px solid #dee2e6;
-      border-radius: 8px;
-      padding: 10px;
+      min-height: 320px;
+      background-color: var(--bg-element);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
       font-size: 1.2rem;
       display: none;
+      resize: vertical;
     }
 
-    /* Loading spinner */
+    /* Loading Spinner Styles */
     .loading-spinner {
       display: none;
       justify-content: center;
       align-items: center;
-      height: 100px;
-      margin-top: 20px;
-    }
-    .spinner-border {
-      width: 4rem;
-      height: 4rem;
-      color: #007bff;
+      height: 120px;
+      margin-top: 25px;
+      margin-bottom: 35px;
     }
 
-    /* Centered large buttons */
+    .spinner-border {
+      width: 4.5rem;
+      height: 4.5rem;
+      color: var(--accent-primary);
+    }
+
+    /* Centered Buttons Styles - now in its own section */
+    .post-generation-section {
+      background-color: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+
     .centered-buttons {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 20px;
-      margin-top: 30px;
+      gap: 25px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
+
     .centered-buttons button {
       width: 200px;
-      height: 70px;
+      height: 65px;
       font-size: 1.5rem;
       font-weight: bold;
-    }
-
-    /* New Score Boxes */
-    .score-box {
-      border: 2px solid #007bff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: none;
       border-radius: 8px;
-      padding: 15px;
-      text-align: center;
-      margin-bottom: 15px;
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #fff;
-    }
-    .score-box.response {
-      background-color: #28a745; /* Green for Response Alignment */
-    }
-    .score-box.discussion {
-      background-color: #ffc107; /* Yellow for Discussion Alignment */
-      color: #212529;
     }
 
+    .centered-buttons button:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Button Style Variations */
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: transparent;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-secondary);
+      border-color: transparent;
+    }
+
+    .btn-info {
+      background-color: var(--accent-info);
+      border-color: transparent;
+    }
+
+    .btn-warning {
+      background-color: var(--accent-warning);
+      border-color: transparent;
+    }
+
+    /* Score Box Styles */
+    .metrics-section {
+      background-color: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+
+    .score-box {
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .score-box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .score-box.response {
+      background-color: rgba(0, 200, 83, 0.1);
+      border-color: var(--accent-success);
+    }
+
+    .score-box.discussion {
+      background-color: rgba(255, 152, 0, 0.1);
+      border-color: var(--accent-warning);
+    }
+
+    #response-score, #discussion-score {
+      color: var(--text-primary);
+      font-size: 1.6rem;
+    }
+
+    /* Section Title Styles */
+    .section-title {
+      position: relative;
+      padding-bottom: 18px;
+      margin-top: 25px;
+      margin-bottom: 25px;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      display: inline-block;
+      text-align: center;
+      width: 100%;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 25%;
+      width: 50%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+      border-radius: 4px;
+    }
+
+    /* Action Button Styles */
+    .action-btn {
+      padding: 10px 18px;
+      margin-right: 12px;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Custom Outline Button Styles */
+    .btn-outline-light {
+      border: 2px solid var(--accent-primary);
+      color: var(--accent-primary);
+      background-color: transparent;
+      transition: all 0.2s ease;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 12px 24px; /* Increased padding for more highlight */
+      box-shadow: 0 4px 8px rgba(101, 88, 219, 0.15); /* Added shadow for highlight */
+    }
+
+    .btn-outline-light:hover {
+      background-color: var(--accent-primary);
+      color: white;
+      box-shadow: 0 6px 12px rgba(101, 88, 219, 0.3);
+    }
+
+    /* Navbar center alignment */
+    .navbar .container {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    .navbar-nav {
+      position: absolute;
+      right: 0;
+    }
+
+    /* Title underline animation */
+    .section-title::after {
+      transition: width 0.3s ease;
+      width: 0;
+    }
+
+    .section-title:hover::after {
+      width: 50%;
+    }
   </style>
 </head>
 
 <body>
   <!-- Navigation Bar with Company Setup Button -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <a class="navbar-brand" href="{{ url_for('index') }}">AI Marketing Dashboard</a>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ml-auto">
-        <li class="nav-item">
-          <a class="btn btn-outline-light" href="{{ url_for('company_setup') }}">Company Setup</a>
-        </li>
-      </ul>
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">AI Marketing Dashboard</a>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="btn btn-outline-light" href="{{ url_for('company_setup') }}">Company Setup</a>
+          </li>
+        </ul>
+      </div>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
     </div>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
   </nav>
 
-  <div class="container mt-4">
-    <h2 class="mb-4">Posts</h2>
+  <div class="container mt-5">
+    <h2 class="mb-4 section-title">Posts</h2>
     <div class="table-container mb-5">
       <table class="table table-bordered table-hover">
-        <thead class="thead-dark">
+        <thead class="thead-light">
           <tr>
             <th>ID</th>
             <th>Title</th>
-            <th style="width: 220px;">Content</th>
-            <th style="width: 220px;">Comments</th>
+            <th style="width: 250px;">Content</th>
+            <th style="width: 250px;">Comments</th>
             <th>Topic</th>
           </tr>
         </thead>
@@ -161,48 +490,15 @@
     <div class="row">
       <!-- Left Column: Bar Chart (Increased Size) -->
       <div class="col-md-8">
-        <br></br>
-        <h2>Top 15 Topics Distribution</h2>
-        <div id="topic-bar-chart" style="height: 600px; width: 100%;"></div>
-        <br></br>
-        <!-- Centered Large Buttons to generate posts for platforms -->
-        <div class="centered-buttons">
-          <br></br>
-          <b style="font-size: larger;">Generate Post for:</b>
-          <button id="generateBlogButton" class="btn btn-primary">Blogs</button>
-          <button id="generateLinkedInButton" class="btn btn-info">LinkedIn</button>
-          <button id="generateTwitterButton" class="btn btn-warning">Twitter</button>
-          <br></br><br></br><br></br>
+        <h2 class="mb-4 section-title">Top 15 Topics Distribution</h2>
+        <div class="chart-container">
+          <div id="topic-bar-chart" style="height: 650px; width: 100%;"></div>
         </div>
-
-        <!-- Loading spinner -->
-        <div id="loadingSpinner" class="loading-spinner">
-          <div class="spinner-border" role="status"></div>
-        </div>
-
-        <!-- Display Generated Post -->
-        <div id="generated-post" class="generated-post-box mt-4" style="display: none;">
-          <h4><strong>Generated Post</strong></h4>
-          <p id="post-topic" style="font-weight: bold; color: #007bff;"></p>
-          <p id="post-content"></p>
-
-          <!-- Textarea for editing -->
-          <textarea id="post-edit-textarea"></textarea>
-
-          <div class="mt-3">
-            <button id="copyButton" class="btn btn-secondary btn-sm">Copy</button>
-            <button id="editButton" class="btn btn-info btn-sm">Edit</button>
-            <button id="saveButton" class="btn btn-success btn-sm" style="display: none;">Save</button>
-            <button id="regenerateButton" class="btn btn-warning btn-sm">Regenerate</button>
-          </div>
-        </div>
-        <br></br><br></br><br></br>
       </div>
 
-      <!-- Right Column: Topics List + Scores -->
+      <!-- Right Column: Topics List -->
       <div class="col-md-4">
-        <br></br>
-        <h3>Top Topics</h3>
+        <h3 class="mb-4 section-title">Top Topics</h3>
         <div class="topics-list">
           <ul class="list-unstyled">
             {% for t, count in sorted_topics %}
@@ -212,21 +508,52 @@
             {% endfor %}
           </ul>
         </div>
-
-        <!-- Score Boxes -->
-        <div id="score-section" style="display: none;">
-          <br></br><br></br><br></br><br></br><br></br>
-          <div class="score-box response" id="responseAlignmentScore">
-            Response Alignment Score: <span id="response-score">-</span>%
-          </div>
-          <div class="score-box discussion" id="discussionAlignmentScore">
-            Discussion Alignment Score: <span id="discussion-score">-</span>%
-          </div>
-        </div>
-
       </div>
     </div>
+    
+    <!-- Separated Post Generation Section -->
+    <div class="post-generation-section">
+      <h2 class="section-title">Generate Marketing Content</h2>
+      <div class="centered-buttons">
+        <b style="font-size: 1.6rem; color: var(--text-secondary);">Generate Post for:</b>
+        <button id="generateBlogButton" class="btn btn-primary">Blogs</button>
+        <button id="generateLinkedInButton" class="btn btn-info">LinkedIn</button>
+        <button id="generateTwitterButton" class="btn btn-warning">Twitter</button>
+      </div>
 
+      <!-- Loading spinner -->
+      <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner-border" role="status"></div>
+      </div>
+
+      <!-- Display Generated Post -->
+      <div id="generated-post" class="generated-post-box mt-4" style="display: none;">
+        <h4 class="section-title"><strong>Generated Post</strong></h4>
+        <p id="post-topic" style="font-weight: bold; color: var(--accent-primary); font-size: 1.3rem;"></p>
+        <p id="post-content"></p>
+
+        <!-- Textarea for editing -->
+        <textarea id="post-edit-textarea"></textarea>
+
+        <div class="mt-4">
+          <button id="copyButton" class="btn btn-secondary btn-sm action-btn">Copy</button>
+          <button id="editButton" class="btn btn-info btn-sm action-btn">Edit</button>
+          <button id="saveButton" class="btn btn-success btn-sm action-btn" style="display: none;">Save</button>
+          <button id="regenerateButton" class="btn btn-warning btn-sm action-btn">Regenerate</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Separated Post Metrics Section -->
+    <div id="score-section" class="metrics-section" style="display: none;">
+      <h2 class="section-title">Post Metrics</h2>
+      <div class="score-box response" id="responseAlignmentScore">
+        Response Alignment Score: <span id="response-score">-</span>%
+      </div>
+      <div class="score-box discussion" id="discussionAlignmentScore">
+        Discussion Alignment Score: <span id="discussion-score">-</span>%
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -235,9 +562,70 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
 
   <script>
+    // Set light theme for Plotly charts
+    var lightLayout = {
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#ffffff',
+      font: {
+        color: '#333333',
+        size: 14
+      },
+      xaxis: {
+        gridcolor: '#e1e4e8',
+        zerolinecolor: '#e1e4e8',
+        tickfont: {
+          size: 12
+        }
+      },
+      yaxis: {
+        gridcolor: '#e1e4e8',
+        zerolinecolor: '#e1e4e8',
+        tickfont: {
+          size: 12
+        }
+      },
+      margin: {
+        l: 65,
+        r: 50,
+        t: 30,
+        b: 120
+      }
+    };
+    
     var transitionConfig = {duration: 800, easing: 'cubic-in-out'};
     var topic_chart = JSON.parse('{{ topic_chart|tojson|safe }}');
+    
+    // Apply light theme to the chart
+    Object.assign(topic_chart.layout, lightLayout);
     topic_chart.layout.transition = transitionConfig;
+    
+    // Group data by count and assign same colors to bars with same counts
+    if (topic_chart.data && topic_chart.data.length > 0) {
+      // Extract the counts
+      const counts = topic_chart.data[0].y;
+      const uniqueCounts = [...new Set(counts)];
+      
+      // Map each unique count to a color shade
+      const colorMap = {};
+      uniqueCounts.forEach((count, index) => {
+        // Calculate a shade of blue based on the count's index
+        const blueShade = Math.max(30, 100 - (index * 10));
+        colorMap[count] = `rgba(101, 88, 219, ${blueShade/100})`;
+      });
+      
+      // Create an array of colors based on the count values
+      const colors = counts.map(count => colorMap[count]);
+      
+      // Set the marker colors
+      topic_chart.data[0].marker = {
+        color: colors,
+        line: {
+          color: '#536dfe',
+          width: 1.5
+        }
+      };
+    }
+    
     Plotly.newPlot('topic-bar-chart', topic_chart.data, topic_chart.layout, {responsive: true});
 
     // Loading spinner
@@ -257,8 +645,18 @@
     document.getElementById('copyButton').addEventListener('click', function() {
       var content = document.getElementById('post-content').textContent;
       navigator.clipboard.writeText(content).then(function() {
-        alert('Content copied to clipboard!');
-      });
+        // Show temporary success indicator
+        const originalText = this.textContent;
+        this.textContent = '✓ Copied!';
+        this.classList.add('btn-success');
+        this.classList.remove('btn-secondary');
+        
+        setTimeout(() => {
+          this.textContent = originalText;
+          this.classList.remove('btn-success');
+          this.classList.add('btn-secondary');
+        }, 2000);
+      }.bind(this));
     });
 
     // Edit post directly below
@@ -279,7 +677,28 @@
       document.getElementById('post-edit-textarea').style.display = 'none';
       document.getElementById('saveButton').style.display = 'none';
       document.getElementById('editButton').style.display = 'inline-block';
-      alert('Post saved successfully!');
+      
+      // Show temporary success notification
+      const notification = document.createElement('div');
+      notification.textContent = 'Post saved successfully!';
+      notification.style.position = 'fixed';
+      notification.style.bottom = '20px';
+      notification.style.right = '20px';
+      notification.style.padding = '12px 24px';
+      notification.style.backgroundColor = 'var(--accent-success)';
+      notification.style.color = 'white';
+      notification.style.borderRadius = '8px';
+      notification.style.zIndex = '1000';
+      notification.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+      notification.style.fontSize = '1.1rem';
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => document.body.removeChild(notification), 500);
+      }, 3000);
     });
 
     // Regenerate post
@@ -310,7 +729,28 @@
       .catch(error => {
         console.error('Error:', error);
         hideLoading();
-        alert('An error occurred. Please try again.');
+        
+        // Error notification
+        const notification = document.createElement('div');
+        notification.textContent = 'An error occurred. Please try again.';
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.right = '20px';
+        notification.style.padding = '12px 24px';
+        notification.style.backgroundColor = '#f04747';
+        notification.style.color = 'white';
+        notification.style.borderRadius = '8px';
+        notification.style.zIndex = '1000';
+        notification.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.2)';
+        notification.style.fontSize = '1.1rem';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => document.body.removeChild(notification), 500);
+        }, 3000);
       });
     }
 
@@ -325,15 +765,17 @@
     document.getElementById('generateTwitterButton').addEventListener('click', function() {
       generatePost('twitter');
     });
+
+    // Add hover effects for a more interactive feel
+    document.querySelectorAll('.section-title').forEach(title => {
+      title.addEventListener('mouseenter', function() {
+        this.style.color = 'var(--accent-primary)';
+      });
+      
+      title.addEventListener('mouseleave', function() {
+        this.style.color = 'var(--text-primary)';
+      });
+    });
   </script>
-  <script>
-    var transitionConfig = {duration: 800, easing: 'cubic-in-out'};
-    var topic_chart = JSON.parse('{{ topic_chart|tojson|safe }}');
-    topic_chart.layout.transition = transitionConfig;
-
-    Plotly.newPlot('topic-bar-chart', topic_chart.data, topic_chart.layout, {responsive: true});
-  </script>
-
-
 </body>
 </html>
