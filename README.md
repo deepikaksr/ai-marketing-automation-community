@@ -54,7 +54,7 @@ cd AI-Engagement-Automation
 2. **Set up the Virtual Environment:**  
 ```bash
 python3 -m venv myenv
-source myenv/bin/activate  # On Windows use: myenv\Scripts\activate
+source myenv/bin/activate 
 ```
 
 3. **Install Dependencies:**  
@@ -67,13 +67,6 @@ The database `data.db` is automatically created when you run the application. En
 
 5. **Configure API Keys:**  
 Set up your Gemini AI API key as an environment variable:  
-```bash
-export GEMINI_API_KEY="your-api-key-here"
-```
-For Windows (CMD):  
-```cmd
-set GEMINI_API_KEY="your-api-key-here"
-```
 
 ---
 
@@ -120,24 +113,5 @@ http://127.0.0.1:5000
 ## 📊 **Topic Scores:**  
 - **Response Alignment Score:** Measures how well the generated post aligns with the company’s style guide.  
 - **Discussion Alignment Score:** Measures how closely the post aligns with audience discussions on the chosen topic.  
-
----
-
-## 🧩 **Troubleshooting:**  
-- **API Errors:** Ensure that your Gemini API key is correctly set as an environment variable.  
-- **Database Issues:** If `data.db` is missing, it will be recreated when you run the app.  
-- **Page Not Found:** Verify that all routes in `app.py` match the ones in the HTML files.  
-
----
-
-## 👥 **Contributors:**  
-- Your Name  
-- Team Members (if applicable)  
-
----
-
-## 📨 **Contact:**  
-For support or further inquiries, please email:  
-**your-email@example.com**  
 
 ---
