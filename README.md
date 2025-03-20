@@ -47,8 +47,8 @@ project-folder
 
 1. **Clone the Repository:**  
 ```bash
-git clone https://github.com/YourRepository/AI-Engagement-Automation.git
-cd AI-Engagement-Automation
+git clone https://github.com/deepikaksr/ai-marketing-automation-community.git
+cd ai-marketing-automation-community
 ```
 
 2. **Set up the Virtual Environment:**  
