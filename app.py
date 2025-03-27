@@ -7,11 +7,17 @@ from textblob import TextBlob
 import requests
 import pyperclip
 from sentence_transformers import SentenceTransformer, util
+from dotenv import load_dotenv
+import os
 
 import topic_modeling
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
+
+# Load environment variables
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
 #############################################
 # Database & Helper Functions
@@ -104,8 +110,7 @@ def get_confirmed_style_guide():
     return None
 
 def generate_ai_response_with_style(prompt_text):
-    api_key = "AIzaSyBf-2TifmPe2Y_dyz5YKBInA_XvGases5k"
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
     data = {"contents": [{"parts": [{"text": prompt_text}]}]}
     try:
