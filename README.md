@@ -37,6 +37,8 @@ project-folder
 │   ├── css
 │   │   └── style.css
 ├── data.db
+└── .env
+└── .gitignore
 ├── requirements.txt
 └── README.md
 ```
