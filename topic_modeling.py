@@ -7,10 +7,7 @@ import praw
 from tqdm import tqdm
 import nltk
 import re
-import json
 from textblob import TextBlob
-import plotly.graph_objs as go
-from sklearn.feature_extraction.text import CountVectorizer
 
 # Download NLTK stopwords if not already downloaded
 nltk.download('stopwords')
@@ -184,14 +181,14 @@ def perform_topic_modeling_on_posts(posts):
     stop_words = set(stopwords.words('english'))
     custom_stop = {
         "im", "ive", "dont", "cant", "you", "me", "now", "like",
-        "research", "open", "local", "translate", "tool", "llms",
+        "the", "open", "local", "translate", "tool", "llms",
         "would", "inference", "think", "implementation", "explores",
         "nice", "integrations", "flux", "get", "got", "using", "use",
         "make", "just", "know", "way", "something", "used", "need",
         "could", "want", "trying", "even", "gonna", "say", "look",
         "every", "much", "working", "500", "time", "day", "really",
         "see", "stuff", "anyone", "tried", "first", "still", "actually",
-        "going", "new", "one", "two", "sure", "bit", "of", "the"
+        "going", "new", "one", "two", "sure", "bit", "of"
     }
     stop_words = stop_words.union(custom_stop)
 
