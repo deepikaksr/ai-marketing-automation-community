@@ -33,6 +33,7 @@ project-folder
 │   ├── company_setup.html
 │   ├── generate_prompt_style.html
 │   ├── topic_summary.html
+|   ├── edit_style.html
 ├── static
 │   ├── css
 │   │   └── style.css
