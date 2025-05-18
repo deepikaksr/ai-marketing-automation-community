@@ -215,7 +215,7 @@ def perform_topic_modeling_on_posts(posts):
     for post in posts:
         combined_text = f"{post['post_title']} {post['post_content']} {post['comments']}"
         processed_text = preprocess_text(combined_text, stop_words)
-        if processed_text and len(processed_text.split()) >= 3:
+        if processed_text and len(processed_text.split()) >= 3:   # posts with less than 3 words after preprocessing removed
             texts.append(processed_text)
             post_ids.append(post["id"])
 
