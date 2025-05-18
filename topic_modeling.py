@@ -8,6 +8,8 @@ from tqdm import tqdm
 import nltk
 import re
 from textblob import TextBlob
+import os
+from dotenv import load_dotenv
 
 # Download NLTK stopwords if not already downloaded
 nltk.download('stopwords')
@@ -88,10 +90,24 @@ def clear_posts_table():
 
 def fetch_and_store_subreddit_posts(subreddit_name="LocalLLaMA", limit=50):
     """Fetches posts from a given subreddit and stores them in the 'posts' table."""
+
+    load_dotenv()
+
+    # Get credentials from environment variables
+    client_id = os.getenv("REDDIT_CLIENT_ID")
+    client_secret = os.getenv("REDDIT_CLIENT_SECRET")
+    user_agent = os.getenv("REDDIT_USER_AGENT")
+
+    # Check if the environment variables were loaded
+    if not all([client_id, client_secret, user_agent]):
+        print("Error: Reddit API credentials not found in .env file or environment variables.")
+        print("Please ensure REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, and REDDIT_USER_AGENT are set.")
+        return # Or raise an exception
+
     reddit = praw.Reddit(
-        client_id="Dl22HwxEYEjmVuOhkgB_SA",
-        client_secret="wEleoUEeucAANVmEosHtaP4YgU01bQ",
-        user_agent="AI Marketing Bot/0.1 by Lucky-Requirement676",
+        client_id=client_id,
+        client_secret=client_secret,
+        user_agent=user_agent,
         requestor_kwargs={'timeout': 60}
     )
     subreddit = reddit.subreddit(subreddit_name)
@@ -134,12 +150,13 @@ def fetch_and_store_subreddit_posts(subreddit_name="LocalLLaMA", limit=50):
             topic TEXT
         )
     ''')
-    for post in posts_data:
+    for post_item in posts_data: # Changed 'post' to 'post_item' to avoid conflict with tqdm 'post'
+        # Update the INSERT statement if you added new column
         cur.execute("""
             INSERT INTO posts (post_title, post_content, comments, ai_response, score, num_comments)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (post["post_title"], post["post_content"], post["comments"],
-              post["ai_response"], post["score"], post["num_comments"]))
+        """, (post_item["post_title"], post_item["post_content"], post_item["comments"],
+              post_item["ai_response"], post_item["score"], post_item["num_comments"]))
     conn.commit()
     conn.close()
     print(f"Stored {len(posts_data)} posts from r/{subreddit_name} into the database.")
